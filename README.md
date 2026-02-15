@@ -1,332 +1,404 @@
-# LLM & AI Agent Engineering
+# Practical LLM & AI Agent Notes
+
+This repository contains a cleaned, structured, and expanded version of my personal learning notes.
+
+## Audience
+
+Python developers building LLM apps (OpenAI API, Hugging Face, LangChain/LangGraph, Gradio demos, basic fine-tuning, and agent frameworks).
+
+## Quick Setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+```
+
+If you want one large environment (not recommended for production, fine for learning):
+
+```bash
+pip install \
+  openai gradio pillow requests httpx python-dotenv pydantic ipython \
+  transformers accelerate bitsandbytes torch datasets pypdf \
+  langchain langchain-openai langchain-community chromadb tiktoken \
+  langgraph graphviz tavily-python amadeus \
+  crewai pandas numpy matplotlib seaborn scikit-learn xgboost \
+  pyautogen google-generativeai anthropic \
+  openai-agents "gradio[mcp]"
+```
+
+Environment variables you will typically need:
+
+- `OPENAI_API_KEY`
+- `HF_TOKEN`
+- `GOOGLE_API_KEY` (Gemini)
+- `ANTHROPIC_API_KEY`
+- `TAVILY_API_KEY`
+- `AMADEUS_API_KEY`, `AMADEUS_API_SECRET`
+
+## Topics
+
+- [Audience](#audience)
+- [Quick Setup](#quick-setup)
+- [09. OpenAI API Basics](#09-openai-api-basics)
+- [12. Understanding the Response Object and Tokens](#12-understanding-the-response-object-and-tokens)
+- [15. Giving the Model a Personality (System Prompt)](#15-giving-the-model-a-personality-system-prompt)
+- [20. Image Inputs Prerequisite](#20-image-inputs-prerequisite)
+- [23. Prompt Components and Techniques](#23-prompt-components-and-techniques)
+- [26. Vision Example (Base64 Image + Text)](#26-vision-example-base64-image--text)
+- [35. Gradio + OpenAI (Demo UI)](#35-gradio--openai-demo-ui)
+- [39. Gradio Interface Anatomy](#39-gradio-interface-anatomy)
+- [41. Minimal Gradio App](#41-minimal-gradio-app)
+- [42. Streaming Responses](#42-streaming-responses)
+- [45. Explanation-Level Slider (Gradio)](#45-explanation-level-slider-gradio)
+- [50. Vellum](#50-vellum)
+- [53. Chatbot Arena](#53-chatbot-arena)
+- [56. Using Gemini/Anthropic](#56-using-geminianthropic)
+- [74. Why Hugging Face](#74-why-hugging-face)
+- [77. Hugging Face Core Libraries and GPU Check](#77-hugging-face-core-libraries-and-gpu-check)
+- [80. Transformers: Pipeline, Tokenizer, Model](#80-transformers-pipeline-tokenizer-model)
+- [83. Tokenization Example](#83-tokenization-example)
+- [86. Quantization vs dtype vs device_map + CausalLM](#86-quantization-vs-dtype-vs-device_map--causallm)
+- [89. Reading PDFs with PyPDF](#89-reading-pdfs-with-pypdf)
+- [92. PDF Assistant (Text Generation QA)](#92-pdf-assistant-text-generation-qa)
+- [95. Multi-Model Gradio + Freeing GPU Memory](#95-multi-model-gradio--freeing-gpu-memory)
+- [103. Working with Datasets (Hugging Face)](#103-working-with-datasets-hugging-face)
+- [106. Two Training Paradigms (High-Level)](#106-two-training-paradigms-high-level)
+- [110. Steps to Choose the Right LLM](#110-steps-to-choose-the-right-llm)
+- [120. RAG Definition](#120-rag-definition)
+- [Day 07 - Build a RAG Pipeline in LangChain](#day-07---build-a-rag-pipeline-in-langchain)
+- [Day 08 - Resume Assistant (OpenAI/Gemini + Pydantic)](#day-08---resume-assistant-openaigemini--pydantic)
+- [Day 09 - Fine-Tuning Open-Source Models (PEFT/LoRA)](#day-09---fine-tuning-open-source-models-peftlora)
+- [Day 10 - Multi-Model Agent Teams with AutoGen](#day-10---multi-model-agent-teams-with-autogen)
+- [Day 11 - Agentic Workflows in LangGraph](#day-11---agentic-workflows-in-langgraph)
+- [Day 12 - CrewAI + Predictive Analytics (Regression)](#day-12---crewai--predictive-analytics-regression)
+- [Day 13 - MCP + OpenAI Agents SDK](#day-13---mcp--openai-agents-sdk)
 
 ---
 
-## Table of Contents
+## 09. OpenAI API Basics
 
-1. **OpenAI API**
-   - Basic Chat Completions call, response structure, tokens
-   - Roles (user, assistant, system) and giving the model a personality
-2. **Prompting, Vision & Gradio**
-   - Sending images to OpenAI (Vision), prompt components, techniques (zero-shot, few-shot, chain-of-thought)
-   - Gradio UI, streaming, explanation-level slider
-   - Model comparison tools (vellum.ai, Chatbot Arena), Google/Anthropic
-3. **Hugging Face & Open-Source Models**
-   - Why Hugging Face, required libraries (transformers, accelerate, bitsandbytes, torch, pypdf)
-   - Login, GPU detection, bitsandbytes and quantization
-   - Pipeline, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, return_tensors
-   - PDF loading (pypdf), PDF Q&A assistant, do_sample and top_p
-4. **Datasets, Training Types & Model Selection**
-   - Loading and inspecting datasets on Hugging Face
-   - SFT vs RL, steps to choose the right LLM for an application
-5. **RAG & LangChain**
-   - RAG (Retrieve, Augment, Generate), LangChain overview
-   - Document loader, RecursiveCharacterTextSplitter, chunk_size and chunk_overlap
-   - Chroma vector store, embeddings, similarity search, RetrievalQAWithSourcesChain
-6. **Resume Assistant with Pydantic**
-   - Pydantic for structured output and validation
-   - Gap analysis between resume and job description, generating updated resume with structured response
-7. **Fine-Tuning with PEFT & LoRA**
-   - Intuition, PEFT, TRL, data formatting for SFT, confusion matrix and metrics
-   - Zero-shot evaluation, EOS and generation params
-   - **LoRA explained:** idea, low-rank matrices, rank and alpha, when to use, integration with SFTTrainer
-   - SFTTrainer, TrainingArguments, why repeated data improves the model
-8. **AutoGen: Multi-Agent Teams**
-   - ConversableAgent, UserProxyAgent, human_input_mode, code_execution_config
-   - max_consecutive_auto_reply, is_termination_msg
-   - GroupChat, GroupChatManager, initiate_chat
-9. **LangGraph: Agentic Workflows**
-   - AI agents, state and StateGraph, nodes and edges
-   - Example: summarize then translate; agent with tools and conditional edges
-   - Custom tools (@tool), Amadeus flight search example
-10. **CrewAI & Machine Learning**
-    - Predictive analytics, regression (pandas, sklearn), EDA, one-hot encoding
-    - Train/test split, LinearRegression, RandomForest, XGBoost, metrics, feature importance
-    - CrewAI Agent, Task, Crew, Process.sequential, prompts importance
-11. **MCP & OpenAI Agents SDK**
-    - Model Context Protocol, MCP server with Gradio (streaming, launch with mcp_server=True)
-    - MCP client, fetch schema, OpenAI Agents SDK Agent and Runner with MCP tools
-
----
-
-## ۱. API (OpenAI)
-
-### فراخوانی پایهٔ Chat Completions
+Correct API shape uses `messages` (plural) and it must be a list.
 
 ```python
 from openai import OpenAI
 
-openai_client = OpenAI(api_key=openai_api_key)
-response = openai_client.chat.completions.create(
+client = OpenAI(api_key="YOUR_API_KEY")
+
+response = client.chat.completions.create(
     model="gpt-4o-mini",
-    messages=[{"role": "user", "content": message}]
+    messages=[
+        {"role": "user", "content": "Explain recursion in one paragraph."}
+    ],
 )
 
 ai_reply_content = response.choices[0].message.content
+print(ai_reply_content)
 ```
 
-**نقش‌ها (roles):** `user`، `assistant`، `system`. نقش در پاسخ همان‌طور که شما در درخواست مشخص کرده‌اید برنمی‌گردد؛ مقدار واقعی را سرویس تنظیم می‌کند.
+Roles:
 
-### ساختار پاسخ (Response)
+- `user`: the user message
+- `assistant`: model response
+- `system`: instructions that set behavior
 
-| فیلد | توضیح |
-|------|--------|
-| `id` | شناسهٔ یکتای درخواست |
-| `model` | نام مدل استفاده‌شده |
-| `finish_reason` | دلیل پایان تولید (مثلاً `stop` یعنی به‌صورت عادی تمام شده) |
-| `created` | timestamp ایجاد |
-| `prompt_tokens` | تعداد توکن‌های ارسالی شما |
-| `completion_tokens` | تعداد توکن‌های تولیدشده توسط مدل |
-| `total_tokens` | جمع هر دو |
+## 12. Understanding the Response Object and Tokens
 
-هر **token** در مدل به یک عدد نگاشت می‌شود. می‌توانید در صفحهٔ [Tokenizer](https://platform.openai.com/tokenizer) اپن‌ای‌آی تعداد توکن و نگاشت را ببینید. تقریباً **۱۰۰ توکن ≈ ۷۵ کلمه** در انگلیسی (یعنی حدوداً ۳/۴ کلمه به ازای هر توکن).
+Typical fields you will see:
 
-### دادن شخصیت به مدل (System Message)
+- `id`: request/response id
+- `model`: model name
+- `choices[0].finish_reason`: why generation stopped (`stop`, `length`, ...)
+- `created`: timestamp
+- `usage.prompt_tokens`: tokens in your input
+- `usage.completion_tokens`: tokens in the model output
+- `usage.total_tokens`: prompt + completion
 
-برای تعریف نقش و شخصیت مدل، از پیام با نقش `system` استفاده کنید:
+Token intuition:
+
+- Tokens are units of text (not words).
+- Rough English heuristic: ~0.75 words/token (varies).
+
+## 15. Giving the Model a "Personality" (System Prompt)
+
+If you want consistent behavior, put it in `system`.
 
 ```python
-response = openai_client.chat.completions.create(
+messages = [
+    {
+        "role": "system",
+        "content": "You are a concise tutor. Explain clearly and ask one clarifying question if needed.",
+    },
+    {"role": "user", "content": "Teach me Big-O notation."},
+]
+```
+
+## 20. Image Inputs Prerequisite
+
+For image processing helpers in Python, install Pillow:
+
+```bash
+pip install pillow
+```
+
+## 23. Prompt Components and Techniques
+
+Prompt components (practical template):
+
+1. Context: who the assistant is
+2. Instruction: the task + constraints
+3. Input data: the text/data you provide
+4. Output indicator: required structure
+
+Techniques:
+
+- Zero-shot: ask directly, no examples
+- Few-shot: include a few examples
+- Decomposition (often called chain-of-thought style planning): split complex tasks into smaller steps
+
+Example educational prompt:
+
+```
+System: You are a careful tutor. Explain step-by-step, but keep the final answer concise.
+User: Explain {topic}. Include: (1) definition, (2) one analogy, (3) one short code example, (4) common mistake.
+Output: Markdown with headings: Definition, Analogy, Example, Common Mistake.
+```
+
+## 26. Vision Example (Base64 Image + Text)
+
+Reusable helper + query function (corrected from shorthand):
+
+```python
+import base64
+import io
+import os
+from typing import Union
+
+from PIL import Image
+from openai import OpenAI
+
+
+def encode_image_to_base64(image: Union[str, Image.Image]) -> str:
+    if isinstance(image, str):
+        if not os.path.exists(image):
+            raise FileNotFoundError(image)
+        with open(image, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+
+    if isinstance(image, Image.Image):
+        buffer = io.BytesIO()
+        image_format = (image.format or "JPEG").upper()
+        image.save(buffer, format=image_format)
+        return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    raise TypeError("image must be a file path or PIL.Image")
+
+
+def query_openai_vision(client: OpenAI, image: Union[str, Image.Image], prompt: str,
+                       model: str = "gpt-4o", max_tokens: int = 200) -> str:
+    b64 = encode_image_to_base64(image)
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+                    },
+                ],
+            }
+        ],
+        max_tokens=max_tokens,
+    )
+
+    return response.choices[0].message.content
+```
+
+Vision prompt (educational):
+
+```
+You are a visual reasoning assistant.
+Task: describe the scene, list key objects, then answer the question.
+Constraints: if you are unsure, say what is unclear.
+Question: {question}
+```
+
+## 35. Gradio + OpenAI (Demo UI)
+
+Gradio is a fast way to demo ML/LLM apps with a web interface.
+
+Temperature note:
+
+- `temperature` is usually between `0` and `2`.
+- `0.7` is a common balance between deterministic and creative.
+
+### Why low temperature for document QA?
+
+Document QA should be factual and grounded in the provided text; low temperature reduces creative drift.
+
+Corrected call shape:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="YOUR_API_KEY")
+
+system_prompt = "You are a helpful tutor."
+message = "Explain what a vector database is."
+
+response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[
-        {"role": "system", "content": "تو یک معلم صبور هستی که مفاهیم را ساده توضیح می‌دهی."},
-        {"role": "user", "content": mymessage}
-    ]
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": message},
+    ],
+    temperature=0.7,
 )
 ```
 
----
+## 39. Gradio Interface Anatomy
 
-## ۲. پرامپت، ویژن و Gradio
+`gr.Interface` parameters:
 
-### ارسال تصویر به OpenAI (Vision)
+- `fn`: Python function (pass the function object, no parentheses)
+- `inputs`: input components (Textbox, Slider, ...)
+- `outputs`: output components
+- `title`, `description`: UI text
 
-- برای کار با تصویر در پایتون، پکیج **Pillow** را نصب کنید: `pip install pillow`.
-
-### اجزای یک پرامپت خوب
-
-1. **Context:** زمینه و شخصیت مدل نسبت به سؤال (چه کسی است و چه اطلاعاتی دارد).
-2. **Instruction:** هدف دقیق و قواعدی که مدل باید رعایت کند.
-3. **Input data:** خود دادهٔ ورودی (مثلاً متن یا تصویر).
-4. **Output indicator:** فرمت یا ساختار خروجی مورد انتظار.
-
-### تکنیک‌های پرامپت‌نویسی
-
-| تکنیک | توضیح |
-|--------|--------|
-| **Zero-shot** | درخواست بدون مثال؛ مدل فقط با دستور جواب می‌دهد. |
-| **Few-shot** | دادن چند مثال سؤال–جواب در خود پرامپت. |
-| **Chain-of-Thought** | تقسیم مسئله یا وظیفهٔ پیچیده به مراحل کوچک‌تر تا مدل گام‌به‌گام فکر کند. |
-
-### مثال: ارسال تصویر و متن به OpenAI Vision
-
-```python
-import io
-import base64
-import os
-from PIL import Image
-
-def encode_image_to_base64(image_path_or_pil):
-    if isinstance(image_path_or_pil, str):
-        if not os.path.exists(image_path_or_pil):
-            raise FileNotFoundError(f"File not found: {image_path_or_pil}")
-        with open(image_path_or_pil, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-    elif isinstance(image_path_or_pil, Image.Image):
-        buffer = io.BytesIO()
-        image_format = image_path_or_pil.format or "JPEG"
-        image_path_or_pil.save(buffer, format=image_format)
-        return base64.b64encode(buffer.getvalue()).decode("utf-8")
-    else:
-        raise ValueError("Expected file path (str) or PIL Image")
-
-def query_openai_vision(client, image, prompt, model="gpt-4o", max_tokens=100):
-    """
-    prompt مثال برای توصیف تصویر:
-    "Describe this image in detail. List the main objects, colors, and any text visible."
-    یا برای سؤال خاص: "What is written on the sign in this image?"
-    """
-    base64_image = encode_image_to_base64(image)
-    try:
-        messages = [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": prompt},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
-                }
-            ]
-        }]
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Error calling API: {e}"
-```
-
-### Gradio: دموی وب برای مدل
-
-**Gradio** ابزاری است برای ساخت سریع رابط وب برای مدل‌های ML. نصب: `pip install gradio`.
-
-- **`gr.Interface`** کلاس اصلی برای ساخت UI است.
-- پارامترهای مهم: `fn` (تابع پایتون، بدون پرانتز)، `inputs`، `outputs`، `title`، `description`.
+## 41. Minimal Gradio App
 
 ```python
 import gradio as gr
 
-SYSTEM_PROMPT_TUTOR = """You are a patient and clear tutor. Your role is to explain concepts so that the learner understands them.
-Rules:
-- Answer in the same language the user writes in (e.g. Persian or English).
-- If the user asks a question, give a direct and structured answer.
-- Use simple examples when helpful. Do not assume prior knowledge unless the user indicates otherwise.
-- Be concise but complete. If the topic is complex, break it into short steps."""
 
-def my_fn(message):
-    response = openai_client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT_TUTOR},
-            {"role": "user", "content": message},
-        ],
-        temperature=0.7,  # بین 0 و 2؛ حدود 0.7 برای تعادل خلاقیت و ثبات مناسب است
-    )
-    return response.choices[0].message.content
+def tutor(question: str) -> str:
+    return f"You asked: {question}"
+
 
 demo = gr.Interface(
-    fn=my_fn,
-    inputs=gr.Textbox(lines=5, placeholder="سؤال خود را بنویسید...", label="ورودی"),
-    outputs=gr.Textbox(label="پاسخ"),
-    title="دستیار هوشمند",
-    description="یک سؤال بپرسید.",
+    fn=tutor,
+    inputs=gr.Textbox(lines=4, placeholder="Ask a question", label="Question"),
+    outputs=gr.Textbox(label="Answer"),
+    title="AI Tutor",
+    description="A minimal Gradio demo",
 )
+
 demo.launch()
 ```
 
-**Temperature:** میزان تصادفی بودن خروجی را کنترل می‌کند (۰ تا ۲). مقدار پایین‌تر پاسخ‌های قطعی‌تر و تکراری‌تر؛ مقدار بالاتر خلاق‌تر ولی ناپایدارتر. برای کارهای واقع‌گرایانه (مثل QA) معمولاً پایین (مثلاً ۰ یا ۰.۳) و برای ایده‌پردازی بالاتر (مثلاً ۰.۷) استفاده می‌شود.
+## 42. Streaming Responses
 
-### استریمینگ (Streaming)
-
-با `stream=True` پاسخ به‌صورت تکه‌تکه (chunk) برمی‌گردد. در تابعی که به Gradio می‌دهید به‌جای `return` از **`yield`** استفاده کنید:
+When you stream, return incremental output with `yield`.
 
 ```python
-def stream_response(message):
-    stream = openai_client.chat.completions.create(
+from openai import OpenAI
+
+client = OpenAI(api_key="YOUR_API_KEY")
+
+
+def stream_answer(system_prompt: str, message: str):
+    stream = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT_TUTOR},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": message},
         ],
         temperature=0.7,
         stream=True,
     )
+
     full_response = ""
     for chunk in stream:
-        if chunk.choices[0].delta and chunk.choices[0].delta.content:
-            text_chunk = chunk.choices[0].delta.content
-            full_response += text_chunk
+        delta = getattr(chunk.choices[0].delta, "content", None)
+        if delta:
+            full_response += delta
             yield full_response
 ```
 
-### اسلایدر برای سطح توضیح (Explanation Level)
-
-می‌توانید با `gr.Slider` سطح سادگی توضیح را انتخاب کنید و آن را در **system prompt** (نه user prompt) استفاده کنید:
+Streaming with Gradio (generator function):
 
 ```python
-explanation_levels = {
-    1: "Like I'm 5 years old",
-    2: "Like I'm 10 years old",
-    3: "Like a high school student",
-    4: "Like a college student",
-    5: "Like an expert in the field",
+import gradio as gr
+
+
+EXPLANATION_LEVELS = {
+    1: "Like I'm 5 years old.",
+    2: "Like I'm 10 years old.",
+    3: "Like I'm a high school student.",
+    4: "Like I'm a college student.",
+    5: "Like I'm an expert in the field.",
 }
 
-def explain(message, level):
-    level_desc = explanation_levels.get(level, "Clearly and concisely")
-    system = f"""You are a tutor. Explain concepts at exactly this level: {level_desc}.
-- Use the same language as the user (e.g. Persian or English).
-- Do not use jargon above this level; if you must mention a term, define it briefly.
-- Give one clear, coherent explanation. Use a short example if it helps."""
-    response = openai_client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": message},
-        ],
-        temperature=0.5,
-    )
-    return response.choices[0].message.content
+
+def make_system_prompt(level: int) -> str:
+    level_desc = EXPLANATION_LEVELS.get(level, "Explain clearly.")
+    return f"You are a friendly technical tutor. {level_desc} Use examples and avoid unnecessary jargon."
+
+
+def tutor_stream(question: str, level: int):
+    system_prompt = make_system_prompt(level)
+    for partial in stream_answer(system_prompt, question):
+        yield partial
+
 
 demo = gr.Interface(
-    fn=explain,
+    fn=tutor_stream,
     inputs=[
-        gr.Textbox(lines=5, placeholder="مفهومی که می‌خواهید توضیح داده شود", label="سؤال"),
-        gr.Slider(minimum=1, maximum=5, step=1, value=3, label="سطح توضیح"),
+        gr.Textbox(lines=4, label="Question"),
+        gr.Slider(1, 5, step=1, value=3, label="Explanation Level"),
     ],
-    outputs=gr.Textbox(label="پاسخ"),
-    title="معلم سطح‌پذیر",
-    description="سؤال خود را بپرسید و سطح توضیح (از ساده تا تخصصی) را انتخاب کنید.",
+    outputs=gr.Textbox(label="Answer"),
+    title="AI Tutor (Streaming)",
 )
+
 demo.launch()
 ```
 
-### ابزارهای مقایسهٔ مدل‌ها
+## 45. Explanation-Level Slider (Gradio)
 
-- **vellum.ai:** مقایسهٔ مدل‌های زبانی.
-- **Chatbot Arena:** امکان دادن پرامپت خودتان، مقایسهٔ خروجی مدل‌ها و رتبه‌دهی؛ رتبه‌بندی جمع‌سپاری کاربران هم وجود دارد.
+Define levels and inject them into the prompt (best in the system message). This section is the non-streaming form of the same idea.
 
-### استفاده از Google و Anthropic
+## 50. Vellum
 
-بعد از گرفتن API key مربوطه:
+Vellum is a platform to compare/evaluate LLMs and prompts.
+
+## 53. Chatbot Arena
+
+Chatbot Arena is a community benchmark where you can compare model outputs side-by-side and vote.
+
+## 56. Using Gemini/Anthropic
+
+After obtaining API keys:
 
 ```bash
 pip install google-generativeai anthropic
 ```
 
----
+## 74. Why Hugging Face
 
-## ۳. Hugging Face و مدل‌های اوپن‌سورس
+Reasons (from the notes):
 
-### چرا Hugging Face؟
+1. More control and customization
+2. Lower cost using smaller models
+3. Open-source architectures are visible
+4. Strong community
+5. Offline / on-prem possibilities
 
-1. **کنترل بیشتر** روی مدل و pipeline.
-2. **مدل‌های کوچک‌تر** → هزینه و منابع کمتر.
-3. **Open-source** و امکان مطالعهٔ معماری.
-4. **جامعه (community)** و مدل/دیتاست آماده.
-5. **اجرای offline** بدون وابستگی به API خارجی.
+## 77. Hugging Face Core Libraries and GPU Check
 
-### کتابخانه‌های موردنیاز
+Install:
 
-| پکیج | کاربرد |
-|------|--------|
-| **transformers** | بارگذاری و استفادهٔ استاندارد از مدل‌ها و tokenizer از Hub |
-| **accelerate** | اجرای کارآمد روی سخت‌افزارهای مختلف (GPU/CPU) |
-| **bitsandbytes** | بارگذاری و اجرای مدل با حافظهٔ کمتر؛ مثلاً **۴-bit** یا **۸-bit** quantization |
-| **torch** | فریم‌ورک deep learning (PyTorch) |
-| **pypdf** | استخراج متن از PDF |
+- `transformers`
+- `accelerate`
+- `bitsandbytes`
+- `torch`
+- `pypdf`
 
-برای مدل‌های سنگین، **Google Colab** با GPU گزینهٔ مناسبی است.
-
-### ورود به Hugging Face در کد (Login)
-
-**سؤال:** چطور در کد به Hugging Face لاگین کنیم؟
-
-با توکن دسترسی (Access Token) از [Settings → Access Tokens](https://huggingface.co/settings/tokens) در سایت HF:
-
-```python
-from huggingface_hub import login
-
-login(token="YOUR_HF_TOKEN")
-# یا بدون آرگومان؛ از شما در محیط اجرا توکن را می‌پرسد:
-# login()
-```
-
-می‌توانید توکن را در متغیر محیطی `HF_TOKEN` قرار دهید و در کد از `os.environ.get("HF_TOKEN")` استفاده کنید تا در کد ذخیره نشود.
-
-### تشخیص GPU و تنظیم دستگاه پیش‌فرض
+GPU check example:
 
 ```python
 import torch
@@ -334,705 +406,1372 @@ import torch
 if torch.cuda.is_available():
     print(f"GPU detected: {torch.cuda.get_device_name(0)}")
     torch.set_default_device("cuda")
-    print("PyTorch default device set to CUDA (GPU)")
+    print("PyTorch default device set to CUDA")
 else:
-    print("Warning: No GPU detected. Running on CPU will be very slow!")
+    print("Warning: No GPU detected. Running on CPU will be extremely slow!")
 ```
 
-### چرا از bitsandbytes استفاده می‌کنیم؟
+How to login in code:
 
-**سؤال:** چرا bitsandbytes؟
+```python
+import os
+from huggingface_hub import login
 
-- مدل‌های بزرگ (مثلاً ۷B پارامتر) با دقت معمول (float32/float16) حافظهٔ زیادی می‌گیرند و روی GPUهای معمولی یا Colab رایگان جا نمی‌شوند.
-- **Quantization** یعنی کاهش دقت ذخیره‌سازی وزن‌ها (مثلاً ۴-bit یا ۸-bit) تا حافظه کم شود و مدل روی سخت‌افزار محدود قابل اجرا باشد.
-- **bitsandbytes** پیاده‌سازی کارآمد این نوع بارگذاری را در اختیار می‌گذارد و با `transformers` یکپارچه است.
+login(token=os.getenv("HF_TOKEN"))
+```
 
-### سه جزء اصلی در transformers
+Why we use `bitsandbytes`:
 
-1. **`pipeline()`:** سطح بالا برای کارهای متداول مثل text generation، summarization و غیره.
-2. **`AutoTokenizer`:** بارگذاری خودکار tokenizer مناسب هر مدل.
-3. **`AutoModelForCausalLM`:** بارگذاری خودکار معماری و وزن‌های مدل برای تولید متن (Causal LM).
+- Enables 4-bit/8-bit quantization to reduce VRAM
+- Makes larger models feasible on limited GPUs
 
-مثال pipeline ساده:
+## 80. Transformers: Pipeline, Tokenizer, Model
+
+Three core concepts:
+
+1. `pipeline(...)`: easy high-level wrapper
+2. `AutoTokenizer`: automatically downloads the correct tokenizer
+3. `AutoModelFor...`: automatically downloads the model architecture + weights
+
+Pipeline example:
 
 ```python
 from transformers import pipeline
 
-pipe = pipeline("text-generation", model="MODEL_ID")
-result = pipe("Your prompt here")
+pipe = pipeline("text-generation", model="gpt2")
+print(pipe("Hello", max_new_tokens=20)[0]["generated_text"])
 ```
 
-مثال tokenizer و تبدیل متن به شناسهٔ توکن‌ها:
+## 83. Tokenization Example
 
 ```python
 from transformers import AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained("MODEL_ID")
-tokens = tokenizer("Your prompt")
-print(tokens["input_ids"])  # لیست اعداد (توکن‌ها)
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+encoded = tokenizer("Hello world")
+print(encoded["input_ids"])  # list of token IDs (not words)
 ```
 
-### تفاوت load_in_4bit / load_in_8bit و torch_dtype
+## 86. Quantization vs dtype vs device_map + CausalLM
 
-**سؤال:** تفاوت این گزینه‌ها چیست؟
+Key ideas:
 
-| پارامتر | معنی |
-|---------|------|
-| **torch_dtype="auto"** | انتخاب خودکار بهترین نوع (مثلاً float16 یا float32) بر اساس سخت‌افزار برای کارایی بهتر. |
-| **load_in_4bit=True** | بارگذاری مدل با دقت ۴-bit (quantization) برای صرفه‌جویی شدید حافظه؛ مناسب Colab و GPUهای محدود. |
-| **load_in_8bit=True** | مشابه بالا با دقت ۸-bit؛ حافظه کمتر از float16 ولی بیشتر از ۴-bit، کیفیت معمولاً بهتر از ۴-bit. |
-| **device_map="auto"** | با کمک **accelerate**، لایه‌های مدل را خودکار روی GPU/CPU توزیع می‌کند. |
+- `load_in_4bit` / `load_in_8bit`: how weights are stored (memory)
+- `torch_dtype`: compute precision during operations
+- `device_map="auto"`: let Accelerate place layers on available devices
+- `return_tensors`: output tensor type (`pt`, `tf`, `np`)
 
-### skip_special_tokens چیست؟
+`skip_special_tokens`:
 
-**سؤال:** `skip_special_tokens` در decode چه کاری می‌کند؟
+- When decoding, removes special tokens like `<eos>`, `<pad>`, etc.
 
-وقتی `tokenizer.decode(ids, skip_special_tokens=True)` استفاده می‌کنید، توکن‌های **ویژه** (مثل `[PAD]`, `[EOS]`, `[BOS]`, `<|endoftext|>` و توکن‌های مشابه مدل) در متن خروجی نمایش داده نمی‌شوند. فقط متن قابل‌خواندن برای انسان برمی‌گردد. برای خروجی نهایی مدل معمولاً `True` مناسب است.
+‍`return_tensors`:
+- `pt`: PyTorch tensors
+- `tf`: TensorFlow tensors
+- `np`: NumPy arrays
 
-### گزینه‌های مهم BitsAndBytesConfig
+BitsAndBytesConfig common knobs:
 
-**سؤال:** گزینه‌های داخل BitsAndBytesConfig چه هستند؟
+- `load_in_4bit=True`
+- `bnb_4bit_quant_type="nf4"`
+- `bnb_4bit_compute_dtype=torch.float16` (or bfloat16)
 
-مثال متداول:
+About `trust_remote_code=True`:
 
-```python
-from transformers import BitsAndBytesConfig
+- Only enable for trusted model repos that require custom code.
 
-quantization_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",       # نوع کوانتیزاسیون ۴-bit (nf4 معمولاً برای LLM بهتر است)
-    bnb_4bit_compute_dtype=torch.float16,  # دقت محاسبات هنگام inference
-    bnb_4bit_use_double_quant=True,  # کوانتیزاسیون دو مرحله‌ای برای صرفه‌جویی بیشتر (اختیاری)
-)
-```
+Two generation styles:
 
-- **load_in_4bit / load_in_8bit:** سطح کوانتیزاسیون.
-- **bnb_4bit_quant_type:** مثلاً `"nf4"` برای مدل‌های مبتنی بر Normal Float ۴-bit.
-- **bnb_4bit_compute_dtype:** دقت tensorها هنگام محاسبه (مثلاً float16).
-- **bnb_4bit_use_double_quant:** اگر True باشد، ثابت‌های کوانتیزاسیون خودشان هم کوانتیز می‌شوند تا حافظه کمتر شود.
+1. Manual tokenize -> `generate` -> decode
+2. `pipeline("text-generation", ...)`
 
-### return_tensors
-
-خروجی tokenizer را مشخص می‌کند که به چه فرمتی برگردد:
-
-- **`pt`:** PyTorch tensor
-- **`tf`:** TensorFlow
-- **`np`:** NumPy
-
-برای استفاده با `model.generate()` در PyTorch معمولاً `return_tensors="pt"` می‌گذارید.
-
-### بارگذاری مدل با AutoModelForCausalLM و کوانتیزاسیون
+Example (manual):
 
 ```python
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
-quantization_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.float16,
-)
+model_id = "gpt2"
 
 tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+
 model = AutoModelForCausalLM.from_pretrained(
     model_id,
+    device_map="auto",
+    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
     quantization_config=quantization_config,
-    device_map="auto",
-    torch_dtype=torch.float16,
-    trust_remote_code=True,  # برای مدل‌های جدیدتر که کد سفارشی دارند ضروری است
 )
-```
 
-دو روش استفاده:
-
-**روش ۱ (مستقیم با tokenizer و model):**
-
-```python
+prompt = "Write a short poem about rain."
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-outputs = model.generate(**inputs, max_new_tokens=256)
-response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+outputs = model.generate(**inputs, max_new_tokens=50)
+text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(text)
 ```
 
-**روش ۲ (با pipeline):**
+Example (pipeline):
 
 ```python
-pipe = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer,
-    torch_dtype=torch.float16,
-    device_map="auto",
-)
-outputs = pipe(prompt, max_new_tokens=256, temperature=0.7, do_sample=True)
-response = outputs[0]["generated_text"]
+from transformers import pipeline
+
+pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device_map="auto")
+out = pipe("Hello", max_new_tokens=20, temperature=0.7)
+print(out[0]["generated_text"])
 ```
 
-### کار با PDF (pypdf)
+## 89. Reading PDFs with PyPDF
 
 ```python
-from pypdf import PdfReader
+import pypdf
 
-reader = PdfReader(pdf_file_path)
+reader = pypdf.PdfReader("file.pdf")
 num_pages = len(reader.pages)
-for page in reader.pages:
-    text = page.extract_text()  # متن همان صفحه
+page_text = reader.pages[0].extract_text()
 ```
 
-### دستیار سؤال‌وـجواب از روی PDF
+## 92. PDF Assistant (Text Generation QA)
 
-ایده: محدود کردن طول متن سند (به‌خاطر محدودیت context مدل)، قرار دادن متن در قالب پرامپت مدل و استخراج جواب از خروجی.
+The note uses a text-generation pipeline. The key is:
 
-- **MAX_CONTENT_CHARS:** حداکثر تعداد کاراکتر متن PDF که در پرامپت می‌گذارید.
-- در پرامپت می‌توانید زبان و سبک پاسخ را هم مشخص کنید (مثلاً برای Phi-3 از قالب `<|system|>`, `<|user|>`, `<|assistant|>` و غیره استفاده می‌شود).
-- برای پاسخ‌های واقع‌گرایانه از سند، معمولاً **temperature** را پایین و **do_sample** را متناسب با مدل تنظیم می‌کنید.
+- extract text
+- truncate to a limit
+- build a prompt template
+- generate
+- parse out the answer
 
-نمونهٔ قالب پرامپت برای مدل‌های مبتنی بر chat (مثلاً Phi-3):
+Expanded and corrected version:
 
 ```python
-MAX_CONTENT_CHARS = 8000  # متن سند را محدود کنید تا در context جا شود
+MAX_CONTENT_CHARS = 25_000
 
-def answer_question_from_pdf(document_text: str, question: str, llm_pipeline) -> str:
-    context = document_text[:MAX_CONTENT_CHARS] + "..." if len(document_text) > MAX_CONTENT_CHARS else document_text
 
-    prompt_template = """<|system|>
-You are a helpful assistant. Answer the user's question using ONLY the document text below. Do not use external knowledge. If the answer is not in the document, say so clearly. Keep answers concise and in the same language as the question.
+def answer_question_from_pdf(document_text: str, question: str, llm_pipeline):
+    context = (document_text[:MAX_CONTENT_CHARS] + "...") if len(document_text) > MAX_CONTENT_CHARS else document_text
+
+    prompt_template = f"""<|system|>
+You are a document QA assistant.
+Use ONLY the provided document text.
+If the answer is not in the document, say: I don't know.
+
+Document text:
+{context}
 <|end|>
 <|user|>
-Document:
-{context}
-
-Question: {question}
+Question:
+{question}
 <|end|>
 <|assistant|>
-Answer:""".format(context=context, question=question)
+Answer:"""
 
     outputs = llm_pipeline(
         prompt_template,
         max_new_tokens=256,
-        do_sample=True,
-        temperature=0.3,
-        top_p=0.9,
+        do_sample=False,
+        temperature=0.1,
+        top_p=1.0,
     )
+
     full_text = outputs[0]["generated_text"]
-    answer_start = full_text.find("Answer:") + len("Answer:")
-    raw_answer = full_text[answer_start:].strip()
-    if "<|end|>" in raw_answer:
-        raw_answer = raw_answer.split("<|end|>")[0]
-    return raw_answer
+    answer_start = full_text.find("Answer:")
+    raw = full_text[answer_start + len("Answer:") :].strip() if answer_start != -1 else full_text.strip()
+
+    end_token = "<|end|>"
+    if end_token in raw:
+        raw = raw.split(end_token)[0].strip()
+
+    return raw
 ```
 
-**do_sample و top_p در pipeline:**
+What are `do_sample` and `top_p`?
 
-- **do_sample=True:** مدل به‌جای انتخاب همیشه محتمل‌ترین توکن، از sampling استفاده می‌کند؛ خروجی متنوع‌تر و خلاق‌تر می‌شود.
-- **do_sample=False:** همیشه گزینهٔ با بیشترین احتمال انتخاب می‌شود؛ خروجی قطعی و قابل تکرار.
-- **top_p (nucleus sampling):** فقط از توکن‌هایی نمونه‌گیری می‌شود که مجموع احتمالشان تا حد معینی (مثلاً ۰.۹) باشد. برای کنترل تنوع و انسجام مفید است.
+- `do_sample=False`: deterministic generation (less random)
+- `do_sample=True`: sampling for diversity
+- `top_p`: nucleus sampling; lower values reduce randomness (only relevant when sampling)
 
-**توجه:** در خلاصهٔ اصلی یک typo بود: `RetrievalQAWithSrourcesChain`؛ شکل صحیح **`RetrievalQAWithSourcesChain`** است. همین‌طور **`RecursiveCharacterTextSplitter`** (نه Recyrsuve)، و **`AutoModelForCausalLM`** (نه CauselLM).
+## 95. Multi-Model Gradio + Freeing GPU Memory
 
-### انتخاب چند مدل در Gradio برای QA روی PDF
+The note describes a pattern: in a Gradio dropdown you switch models; when you switch, release the old model/tokenizer and free GPU cache.
 
-در یک درس نمونه، در Gradio امکان انتخاب بین چند مدل برای QA روی PDF اضافه شده بود. با تغییر مدل از منو، مدل و tokenizer قبلی از حافظه آزاد می‌شوند و در صورت استفاده از **torch**، cache گرافیکی هم پاک می‌شود تا مدل جدید با روش‌های قبلی (مثلاً quantization و device_map) بارگذاری شود.
+Key ideas:
 
----
+- Keep a single "current" model loaded
+- On change: delete old references, `gc.collect()`, and `torch.cuda.empty_cache()`
 
-## ۴. دیتاست‌ها، انواع آموزش و انتخاب مدل
+```python
+import gc
+import torch
 
-### کار با دیتاست در Hugging Face
+current_model = None
+current_tokenizer = None
 
-```bash
-pip install datasets
+
+def unload_current():
+    global current_model, current_tokenizer
+    current_model = None
+    current_tokenizer = None
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 ```
+
+Dropdown switching sketch:
+
+```python
+import gradio as gr
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+MODEL_CHOICES = ["gpt2", "distilgpt2"]
+
+
+def load_model(model_id: str):
+    unload_current()
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+    return model, tokenizer
+
+
+def on_model_change(model_id: str):
+    global current_model, current_tokenizer
+    current_model, current_tokenizer = load_model(model_id)
+    return f"Loaded {model_id}"
+
+
+with gr.Blocks() as demo:
+    dropdown = gr.Dropdown(MODEL_CHOICES, value=MODEL_CHOICES[0], label="Model")
+    status = gr.Markdown()
+    dropdown.change(on_model_change, inputs=[dropdown], outputs=[status])
+
+demo.launch()
+```
+
+## 103. Working with Datasets (Hugging Face)
 
 ```python
 from datasets import load_dataset
 
 dataset = load_dataset("dataset_id", split="train")
-dataset.features   # توضیح ستون‌ها
-dataset.to_pandas()  # تبدیل به DataFrame
-dataset.select(range(10)).to_pandas()  # نمایش ۱۰ ردیف اول
+print(dataset.features)
+print(dataset.to_pandas().head())
+print(dataset.select(range(10)).to_pandas())
 ```
 
-### دو نوع آموزش مدل‌های زبانی
+## 106. Two Training Paradigms (High-Level)
 
-| نوع | توضیح | مثال |
-|-----|--------|------|
-| **Supervised Fine-Tuning (SFT)** | مدل با جفت سؤال–جواب درست آموزش می‌بیند. | رویکرد مشابه OpenAI |
-| **Reinforcement Learning (RL)** | با سیگنال پاداش (Reward) و آزمون و خطا تنظیم می‌شود. | مثل DeepSeek |
+- SFT (Supervised Fine-Tuning): learn from prompt -> correct answer pairs
+- RL-style training: learn by optimizing a reward signal
 
-### مراحل انتخاب مدل مناسب برای اپلیکیشن
+## 110. Steps to Choose the Right LLM
 
-1. **تعریف نیاز:** وظیفهٔ اصلی (خلاصه‌سازی، طبقه‌بندی، جستجو و ...)، ورودی/خروجی مورد انتظار، حریم خصوصی داده، تأخیر، هزینه، زمان عرضه.
-2. **نوع مدل:** شاید برای کار شما Generative AI لازم نباشد؛ مطلب مرتبط در [cohere.com](https://cohere.com) را ببینید.
-3. **اندازهٔ مدل:** متناسب با منابع و کیفیت مورد نیاز.
-4. **منبع مدل:** Open vs Closed source.
-5. **مقیاس‌پذیری:** چطور با رشد کاربر و ترافیک مقیاس می‌گیرد.
+1. Define the core task (summarization, classification, search, QA, ...)
+2. Define expected input/output
+3. Identify constraints: privacy, latency, cost, time-to-market
+4. Choose model type and size (you may not need a generative model)
+5. Choose open vs closed source
+6. Decide scaling/deployment strategy
+
+## 120. RAG Definition
+
+RAG (Retrieval-Augmented Generation):
+
+- Retrieve relevant external information
+- Add retrieved chunks to the prompt
+- Generate an answer grounded in that context
 
 ---
 
-## ۵. RAG و LangChain
+## Day 07 - Build a RAG Pipeline in LangChain
 
-### RAG چیست؟
+LangChain lets you combine components (loaders, splitters, embeddings, vector stores, retrievers, chains) to build RAG systems.
 
-**RAG (Retrieval-Augmented Generation):**
-
-1. **R (Retrieve):** جستجو در منبع خارجی (مثلاً مستندات) و بازیابی قطعات مرتبط.
-2. **A (Augment):** اضافه کردن این قطعات به پرامپت کاربر.
-3. **G (Generate):** تولید پاسخ با LLM روی پرامپت غنی‌شده.
-
-### LangChain
-
-**LangChain** فریم‌ورکی است برای ساخت اپلیکیشن‌های مبتنی بر LLM با چسباندن اجزای مختلف (لودر، تقسیم‌کننده، ذخیرهٔ برداری، زنجیرهٔ QA و ...) به هم.
-
-نصب (نمونه):
+Install:
 
 ```bash
-pip install -q langchain langchain-openai chromadb tiktoken langchain-community
+pip install langchain langchain-openai langchain-community chromadb tiktoken
 ```
 
-- **chunk_size:** حداکثر اندازهٔ هر قطعه متن (مثلاً بر اساس تعداد کاراکتر).
-- **chunk_overlap:** تعداد کاراکتر مشترک بین دو قطعهٔ پشت‌سرهم تا ارتباط متن حفظ شود.
+Concepts:
 
-### استفادهٔ پایه: لودر، تقسیم، ذخیرهٔ برداری، جستجو
+- `chunk_size`: chunk length (often characters)
+- `chunk_overlap`: how much overlap between chunks
+
+Embeddings definition:
+
+- Embeddings represent text as dense numeric vectors so similarity search can find related chunks.
+
+Example pipeline (module imports vary by LangChain version):
 
 ```python
-from langchain.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 
+# Depending on your LangChain version, these may live in langchain_community.
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+
+DATA_FILE_PATH = "data.txt"
+
 loader = TextLoader(DATA_FILE_PATH, encoding="utf-8")
-raw_document = loader.load()
+raw_docs = loader.load()
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=150,
-)
-documents = text_splitter.split_documents(raw_document)
-# documents[0].page_content متن نخستین chunk است؛ هر document متادیتای دیگری هم دارد.
+splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
+documents = splitter.split_documents(raw_docs)
 
-embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+embeddings = OpenAIEmbeddings(api_key="YOUR_API_KEY")
 vector_store = Chroma.from_documents(documents=documents, embedding=embeddings)
 
-# تست بازیابی:
-similar_docs = vector_store.similarity_search(test_query, k=2)
+# Optional: inspect one stored embedding/document (internal API; learning/debug only)
+stored = vector_store._collection.get(include=["embeddings", "documents"], limit=1)
+print(len(stored["embeddings"][0]))
+print(stored["documents"][0][:200])
+
+# Retrieval test
+query = "What is the refund policy?"
+similar_docs = vector_store.similarity_search(query, k=2)
+print(similar_docs[0].page_content)
 ```
 
-**Embedding:** نمایش متن (کلمه، جمله، سند) به‌صورت بردار عددی متراکم است تا بتوان شباهت معنایی را با فاصله یا شباهت برداری اندازه گرفت.
-
-### زنجیرهٔ RAG با LangChain
-
-به **Retriever** (مثلاً همان vector store) و یک **LLM** (مثلاً OpenAI) نیاز دارید:
+Build QA chain (corrected name is `RetrievalQAWithSourcesChain`):
 
 ```python
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain_openai import OpenAI
 
 retriever = vector_store.as_retriever(search_kwargs={"k": 3})
-llm = OpenAI(temperature=0, openai_api_key=openai_api_key)
-
-# پرامپت پیش‌فرض زنجیره: context بازیابی‌شده و سؤال کاربر را می‌گیرد.
-# می‌توان با chain_type_kwargs={"prompt": ...} پرامپت سفارشی داد، مثلاً:
-# "Use only the following context to answer the question. If the answer is not in the context, say so. Context: {context} Question: {question}"
+llm = OpenAI(temperature=0, api_key="YOUR_API_KEY")
 
 qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
-    llm,
-    chain_type="stuff",  # همهٔ متن‌های بازیابی‌شده در یک context قرار می‌گیرند
+    llm=llm,
+    chain_type="stuff",  # put retrieved chunks into the prompt
     retriever=retriever,
     return_source_documents=False,
     verbose=False,
 )
 
-result = qa_chain.invoke({"question": test_query})
-answer = result.get("answer")
-sources = result.get("sources")
+result = qa_chain.invoke({"question": query})
+print(result.get("answer"))
+print(result.get("sources"))
 ```
 
-- **return_source_documents=True:** علاوه بر متن، شیء سندهای منبع هم برگردانده می‌شود.
-- **verbose=True:** مراحل اجرای زنجیره برای دیباگ چاپ می‌شود.
+Notes:
+
+- `return_source_documents=True` includes the source docs in the result object.
+- `verbose=True` is useful for debugging.
 
 ---
 
-## ۶. دستیار رزومه با Pydantic
+## Day 08 - Resume Assistant (OpenAI/Gemini + Pydantic)
 
-در این بخش از **OpenAI** و **Gemini** برای تحلیل رزومه در برابر آگهی شغلی و تولید رزومهٔ به‌روز استفاده می‌شود. **Pydantic** برای تعریف خروجی ساختاریافته (structured output) و اعتبارسنجی استفاده می‌شود.
-
-### Pydantic در چند خط
-
-**Pydantic** کتابخانه‌ای است برای تعریف مدل داده با type hints و اعتبارسنجی خودکار. به‌جای دیکشنری نامشخص، خروجی API را به صورت کلاس با فیلدهای مشخص تعریف می‌کنید؛ هم خوانایی بهتر هم خطای کمتر.
-
-نصب:
+Install:
 
 ```bash
-pip install pydantic openai google-generativeai python-dotenv
+pip install pydantic openai google-generativeai python-dotenv ipython
 ```
 
-### تحلیل فاصله (Gap) بین رزومه و آگهی
+Pattern:
+
+1. Create a gap analysis between job description and resume
+2. Generate an updated resume and a diff
+3. Enforce schema with Pydantic
+
+## Why Pydantic here?
+
+When an LLM returns "JSON", it is easy to get:
+
+- missing fields
+- wrong types (e.g., list instead of string)
+- extra keys you did not ask for
+- invalid JSON (trailing commas, comments, etc.)
+
+Pydantic solves the \"LLM output is untrusted\" problem by validating and normalizing the output against a Python schema.
+
+Practical benefits:
+
+- You get a strongly-typed object (`ResumeOutput`) instead of a loose dict.
+- Validation errors are explicit and debuggable (you can retry the LLM with the error message).
+- Downstream code becomes safer (no `KeyError` / `None` surprises).
+
+## Core concepts (quick)
+
+- `BaseModel`: define a schema with type hints.
+- Validation: Pydantic checks types and required fields at runtime.
+- Serialization: convert a model back to JSON/dict for storage or APIs.
+
+Example schema:
+
+```python
+from pydantic import BaseModel, Field
+
+
+class ResumeOutput(BaseModel):
+    updated_resume: str = Field(..., description="Full updated resume text")
+    diff_markdown: str = Field(..., description="Markdown diff vs original resume")
+```
+
+### Parsing model output safely
+
+If your LLM returns a JSON string, parse and validate it.
+
+Pydantic v2:
+
+```python
+obj = ResumeOutput.model_validate_json(json_string_from_llm)
+data = obj.model_dump()
+```
+
+Pydantic v1:
+
+```python
+obj = ResumeOutput.parse_raw(json_string_from_llm)
+data = obj.dict()
+```
+
+If validation fails, catch the exception and retry with a stricter prompt:
+
+```python
+from pydantic import ValidationError
+
+try:
+    obj = ResumeOutput.model_validate_json(json_string_from_llm)  # v2
+except ValidationError as e:
+    # Send e.errors() back to the model and ask it to fix the JSON.
+    raise
+```
+
+Example (structure-focused, with explicit prompts):
 
 ```python
 from pydantic import BaseModel
 
+
 def analyze_resume_against_job_description(job_description_text: str, resume_text: str) -> str:
-    prompt = f"""You are an expert career coach. Compare the following job description with the candidate's resume.
+    prompt = f"""You are a career coach.
+Compare the resume against the job description.
+Return a bullet gap analysis with: missing keywords, missing experience signals, and suggested rewrites.
 
-Job description:
-{job_description_text}
-
-Candidate's resume:
-{resume_text}
-
-Provide a clear gap analysis:
-1. What skills or experiences does the job require that the resume does not clearly show?
-2. What strengths in the resume match the job well?
-3. Concrete, actionable suggestions to improve the resume for this role (e.g. which keywords to add, which experience to highlight).
-Write in a professional tone. Use the same language as the job description (e.g. English or Persian)."""
+Job description:\n{job_description_text}\n\nResume:\n{resume_text}\n"""
     gap_analysis = openai_generate(prompt, temperature=0.7)
     return gap_analysis
 
-gap_analysis_openai = analyze_resume_against_job_description(job_description_text, resume_text)
-```
 
-### خروجی ساختاریافته با Pydantic
-
-با تعریف یک کلاس Pydantic می‌توانید از API بخواهید خروجی را دقیقاً در قالب آن برگرداند (مثلاً با `response_format` در OpenAI):
-
-```python
 class ResumeOutput(BaseModel):
     updated_resume: str
     diff_markdown: str
 
-def generate_resume(
-    job_description_text: str,
-    resume_text: str,
-    gap_analysis_openai: str,
-) -> dict:
-    prompt = f"""You are an expert resume writer. Using the job description, current resume, and gap analysis below, produce:
-1. An updated resume (full text) that better aligns with the job, incorporating the suggested improvements.
-2. A short diff or summary in Markdown format showing what was added or changed (e.g. bullet points under each section).
 
-Job description:
-{job_description_text}
+def generate_resume(job_description_text: str, resume_text: str, gap_analysis_openai: str) -> dict:
+    prompt = f"""You are a resume editor.
+Use the gap analysis to improve the resume.
+Return JSON with fields: updated_resume, diff_markdown.
 
-Current resume:
-{resume_text}
-
-Gap analysis and suggestions:
-{gap_analysis_openai}
-
-Output only valid JSON with two keys: "updated_resume" (string) and "diff_markdown" (string). Do not add any text outside the JSON."""
-    updated_resume_json = openai_generate(
-        prompt,
-        temperature=0.7,
-        response_format=ResumeOutput,
-    )
+Gap analysis:\n{gap_analysis_openai}\n\nOriginal resume:\n{resume_text}\n"""
+    updated_resume_json = openai_generate(prompt, temperature=0.7, response_format=ResumeOutput)
     return updated_resume_json
 ```
 
-در این الگو، خروجی به‌صورت شیء `ResumeOutput` اعتبارسنجی می‌شود و می‌توانید به‌راحتی به `updated_resume` و `diff_markdown` دسترسی داشته باشید.
-
 ---
 
-## ۷. Fine-Tuning با PEFT و LoRA
+## Day 09 - Fine-Tuning Open-Source Models (PEFT/LoRA)
 
-### مثال شهودی
+Motivation example (from the notes):
 
-فرض کنید در شرکتی دارویی از LLaMA برای پاسخ به سؤالات استفاده می‌کنید. سؤال تخصصی پزشکی بپرسید؛ احتمالاً پاسخ کلی می‌دهد. اگر همان مدل را با مجموعه‌دادهٔ حوزهٔ پزشکی **fine-tune** کنید، پاسخ‌ها تخصصی‌تر می‌شوند.
+- A generic model answers medical questions vaguely.
+- Fine-tuning on medical data can make answers more specific and useful.
 
-### PEFT (Parameter-Efficient Fine-Tuning)
-
-کتابخانه‌ای برای تطبیق مدل‌های بزرگ با کاربردهای مختلف **بدون** آموزش تمام پارامترها (که بسیار پرهزینه است). فقط بخشی از پارامترها یا لایه‌های اضافه آموزش داده می‌شوند.
-
-### TRL (Transformer Reinforcement Learning)
-
-کتابخانه‌ای که ابزارهای آموزش مدل‌های ترنسفورمر را با روش‌هایی مثل **SFT** و **RL** فراهم می‌کند.
-
-نصب (نمونه):
+Libraries:
 
 ```bash
-pip install -q transformers accelerate bitsandbytes torch datasets peft trl scikit-learn gradio
+pip install transformers accelerate bitsandbytes torch datasets peft trl scikit-learn gradio
 ```
 
-برای این نوع آموزش، **GPU** تقریباً ضروری است. **seed** برای تکرارپذیری و **shuffle** برای به‌هم‌ریختن ترتیب داده در هر epoch استفاده می‌شود.
+Concepts:
 
-### قالب‌دهی داده برای SFT
+- PEFT: adapt models efficiently without updating all weights
+- TRL: training utilities for transformer models (including SFT)
+- GPU is practically required for meaningful fine-tuning speed
+- `seed`: makes randomness reproducible
+- `shuffle`: randomize ordering during splitting/training
 
-داده را به فرمت گفتگو (user / assistant) و با **chat template** مدل (مثلاً Gemma) تبدیل می‌کنید:
-
-- **apply_chat_template:** پیام‌ها را به قالب توکنی همان مدل تبدیل می‌کند.
-- **tokenize=False:** خروجی متن بماند (نه لیست id).
-- **add_generation_prompt=False:** برای آموزش لازم است؛ برای inference معمولاً True می‌گذارید تا مدل بداند باید جواب تولید کند.
-
-برای مدل‌هایی مثل Gemma، اگر **pad_token** تعریف نشده باشد، معمولاً آن را برابر **eos_token** قرار می‌دهند.
-
-### Confusion Matrix و معیارها
-
-در طبقه‌بندی (مثلاً sentiment):
-
-- **TP (True Positive):** مدل و واقعیت هر دو مثبت.
-- **TN (True Negative):** مدل و واقعیت هر دو منفی.
-- **FP (False Positive):** مدل مثبت، واقعیت منفی.
-- **FN (False Negative):** مدل منفی، واقعیت مثبت.
-
-- **Accuracy** = (TP + TN) / (TP + TN + FP + FN)
-- **Precision** = TP / (TP + FP)
-- **Recall** = TP / (TP + FN)
-- **F1** ترکیب precision و recall است.
-
-### Zero-Shot با مدل پایه
-
-قبل از fine-tune می‌توان با همان مدل پایه و یک پرامپت مناسب، طبقه‌بندی zero-shot انجام داد و با معیارهای بالا ارزیابی کرد تا بعد از fine-tune مقایسه شود.
-
-- **truncation=True:** اگر متن طولانی‌تر از حد مدل بود، قطع شود.
-- **max_length:** حداکثر تعداد توکن ورودی.
-- **EOS (End-of-Sequence):** وقتی مدل این توکن را تولید کرد، تولید متوقف می‌شود.
-
-### LoRA (Low-Rank Adaptation) — آموزش کامل
-
-**مشکل:** در Fine-Tuning معمولی، تمام وزن‌های مدل (مثلاً ۷ میلیارد پارامتر) به‌روز می‌شوند. این کار به حافظهٔ GPU بسیار زیاد و زمان آموزش طولانی نیاز دارد.
-
-**ایدهٔ LoRA:** در لایه‌های ترنسفورمر (معمولاً attention)، ماتریس وزن اصلی **W** را در حین آموزش ثابت نگه می‌داریم و به‌جای آن دو ماتریس کوچک **A** و **B** را آموزش می‌دهیم و به‌صورت زیر استفاده می‌کنیم:
-
-\[
-\text{خروجی} = (W + B \cdot A) \cdot x
-\]
-
-- **W** ابعاد مثلاً `d × k` دارد (خیلی بزرگ).
-- **A** ابعاد `r × k` و **B** ابعاد `d × r` دارند؛ **r** (rank) عددی کوچک است (مثلاً ۸، ۱۶، ۳۲).
-- تعداد پارامترهای قابل آموزش: `r×(k+d)` که در مقایسه با `d×k` بسیار کمتر است.
-
-**چرا Low-Rank؟** فرض این است که تغییرات مفید مدل برای تطبیق با وظیفهٔ جدید در یک زیرفضای با بعد کم (low-rank) قرار می‌گیرند؛ پس نیازی به تغییر تمام عناصر W نیست.
-
-**پارامترهای مهم LoRA در PEFT:**
-
-| پارامتر | معنی |
-|---------|------|
-| **r (rank)** | بعد ماتریس‌های A و B. بزرگ‌تر → ظرفیت بیشتر، پارامتر و هزینه بیشتر. معمولاً ۸ تا ۶۴. |
-| **lora_alpha** | ضریب مقیاس برای به‌روزرسانی LoRA. معمولاً alpha = 2×rank یا برابر rank. |
-| **target_modules** | لیست نام لایه‌هایی که LoRA روی آن‌ها اعمال شود (مثلاً `["q_proj","v_proj"]` در attention). |
-| **lora_dropout** | dropout روی خروجی LoRA برای کاهش overfitting. |
-
-**چه زمانی از LoRA استفاده کنیم؟** وقتی دیتاست نسبتاً کوچک است، وظیفهٔ جدید به دانش کلی مدل نزدیک است، یا منابع GPU محدود است. برای تغییرات بسیار بزرگ در رفتار مدل گاهی full fine-tune یا روش‌های دیگر مناسب‌ترند.
-
-**ادغام با SFTTrainer:** در TRL می‌توان مدل را با `PeftModel` (از PEFT) بارگذاری کرد و همان مدل را به SFTTrainer داد؛ در این حالت فقط پارامترهای LoRA آموزش می‌بینند.
+Load and split dataset:
 
 ```python
-from peft import LoraConfig, get_peft_model
+import torch
+from datasets import load_dataset
+
+if torch.cuda.is_available():
+    print(f"GPU detected: {torch.cuda.get_device_name(0)}")
+    torch.set_default_device("cuda")
+else:
+    print("Warning: No GPU detected. Running on CPU will be extremely slow!")
+
+labeled_dataset = load_dataset("dataset_id", split="train")
+
+split_dataset = labeled_dataset.train_test_split(
+    test_size=0.1,
+    seed=42,
+    shuffle=True,
+)
+train_dataset = split_dataset["train"]
+test_dataset = split_dataset["test"]
+```
+
+Format examples for SFT (corrected + explicit prompt):
+
+```python
+import torch
+from transformers import AutoTokenizer, BitsAndBytesConfig
+
+system_prompt = (
+    "You are a sentiment classifier. "
+    "Return ONLY one label: Positive, Neutral, or Negative."
+)
+
+
+def format_for_sft_gemma(example, tokenizer: AutoTokenizer):
+    user_prompt = f"Sentence: {example['text']}"
+    assistant_response = example["sentiment"]
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+        {"role": "assistant", "content": assistant_response},
+    ]
+
+    formatted_text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=False,
+    )
+
+    return {"text": formatted_text}
+
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+)
+```
+
+Tokenizer padding note (common in causal LMs):
+
+```python
+tokenizer = AutoTokenizer.from_pretrained("your_model_id")
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+```
+
+Formatting datasets for trainers (pattern from notes):
+
+```python
+sft_train_dataset = train_dataset.map(
+    format_for_sft_gemma,
+    fn_kwargs={"tokenizer": tokenizer},
+    remove_columns=list(train_dataset.features),
+)
+sft_test_dataset = test_dataset.map(
+    format_for_sft_gemma,
+    fn_kwargs={"tokenizer": tokenizer},
+    remove_columns=list(test_dataset.features),
+)
+```
+
+Confusion matrix (conceptual reminder from notes):
+
+- TP: predicted positive, actually positive
+- TN: predicted negative, actually negative
+- FP: predicted positive, actually negative
+- FN: predicted negative, actually positive
+
+Metrics correction (the original note mixed accuracy and F1):
+
+- Accuracy: `(TP + TN) / (TP + TN + FP + FN)`
+- Precision: `TP / (TP + FP)`
+- Recall: `TP / (TP + FN)`
+- F1: `2 * (Precision * Recall) / (Precision + Recall)`
+
+Zero-shot classification with base model (pattern from notes, cleaned):
+
+```python
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+labels = ["Positive", "Neutral", "Negative"]
+
+
+def create_zeroshot_prompt(sentence: str) -> str:
+    return (
+        "You are a sentiment classifier. Return only one label: Positive, Neutral, or Negative.\n"
+        f"Sentence: {sentence}\n"
+        "Label:"
+    )
+
+
+def classify_zero_shot(sentence: str, model, tokenizer) -> str:
+    prompt = create_zeroshot_prompt(sentence)
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to(model.device)
+
+    eos_id = tokenizer.eos_token_id
+    pad_id = tokenizer.pad_token_id
+
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=10,
+            eos_token_id=eos_id,
+            pad_token_id=pad_id,
+            do_sample=False,
+        )
+
+    response_ids = outputs[0][inputs["input_ids"].shape[1] :]
+    response_text = tokenizer.decode(response_ids, skip_special_tokens=True).strip()
+
+    predicted = "Unknown"
+    for label in labels:
+        if label.lower() in response_text.lower():
+            predicted = label
+            break
+
+    return predicted
+```
+
+Generation params reminders:
+
+- `truncation=True`: if text is too long, cut it
+- `max_length`: max tokens the model can see
+- EOS: if model hits EOS token, stop generation
+
+LoRA overview:
+
+- reduces compute/memory by training small adapter matrices
+
+### LoRA (Practical Tutorial Add-on)
+
+LoRA (Low-Rank Adaptation) fine-tunes a model by injecting small trainable matrices into selected weight layers (usually attention projections), while keeping the original model weights frozen.
+
+Why this is useful:
+
+- Much lower GPU memory usage than full fine-tuning
+- Faster training
+- Easier to store/share adapters (only a small file)
+
+Core intuition:
+
+- A dense weight update `DeltaW` can be approximated as `A @ B` where `A` and `B` are low-rank matrices (`rank = r`).
+- You train only `A` and `B` (the adapter), not the full `W`.
+
+Key LoRA hyperparameters:
+
+- `r`: rank (capacity). Typical: 4, 8, 16.
+- `lora_alpha`: scaling factor. Common: 16, 32, 64.
+- `lora_dropout`: regularization to reduce overfitting. Common: 0.0-0.1.
+- `target_modules`: which layers to adapt (often `q_proj`, `v_proj` for LLaMA-like models).
+- `bias`: whether to train bias terms (usually `\"none\"`).
+
+When to use LoRA:
+
+- You need task adaptation but cannot afford full fine-tuning.
+- You want to maintain the base model and swap task adapters.
+- You want to combine LoRA with quantization (QLoRA) for even smaller VRAM usage.
+
+### QLoRA (LoRA + 4-bit quantization)
+
+QLoRA loads the base model in 4-bit and trains LoRA adapters on top. In practice:\n
+- Base weights are quantized (memory saving)\n
+- Adapters are trained in higher precision\n
+- You get good tradeoffs on limited GPUs\n
+
+### Minimal PEFT LoRA Skeleton (Educational)
+
+This is a reference pattern; exact imports and supported args can vary by model and library versions.
+
+```python
+import torch
+from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+model_id = "your_model_id"
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+)
+
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    device_map="auto",
+    quantization_config=bnb_config,
+    torch_dtype=torch.float16,
+)
+
+base_model = prepare_model_for_kbit_training(base_model)
 
 lora_config = LoraConfig(
-    r=16,
-    lora_alpha=32,
-    target_modules=["q_proj", "v_proj"],  # بسته به معماری مدل متفاوت است
+    r=8,
+    lora_alpha=16,
     lora_dropout=0.05,
     bias="none",
     task_type="CAUSAL_LM",
+    target_modules=["q_proj", "v_proj"],  # adjust per architecture
 )
+
 model = get_peft_model(base_model, lora_config)
-model.print_trainable_parameters()  # فقط پارامترهای LoRA trainable هستند
-# بعد همین model را به SFTTrainer می‌دهید
+model.print_trainable_parameters()
 ```
 
-### SFTTrainer و TrainingArguments
+Data formatting tip (matches your earlier SFT formatting style):
 
-- **SFTTrainer:** فرایند آموزش نظارت‌شده (prompt → response) را مدیریت می‌کند.
-- **TrainingArguments:** پارامترهایی مثل تعداد epoch، نرخ یادگیری، batch size و ... را تنظیم می‌کند.
+- Always keep a consistent chat template (`system`, `user`, `assistant`) for training.
+- For classification tasks, force a constrained output (e.g., only one label).
 
-### چرا با تکرار همان داده مدل بهتر می‌شود؟
+Saving, loading, merging adapters (conceptual):
 
-- هر **epoch** یعنی یک بار دیدن کل دیتاست.
-- در هر بار، وزن‌ها کمی به‌سمت کاهش خطا به‌روز می‌شوند؛ تغییر هر قدم کوچک است پس چند بار تکرار لازم است.
-- حتی با دادهٔ تکراری، به‌خاطر به‌روزرسانی وزن‌ها، خروجی در epochهای بعدی می‌تواند بهتر شود.
-- مدل به‌صورت مستقیم «منطق» را درک نمی‌کند؛ احتمال توکن‌ها را طبق دادهٔ آموزش تنظیم می‌کند.
+- Save adapters: `model.save_pretrained(\"adapter_dir\")`
+- Load adapters later onto the same base model
+- Merge for inference (if supported): adapter weights can be merged into base weights to simplify deployment
+
+Training tooling terms:
+
+- `SFTTrainer`: manages supervised fine-tuning on prompt->response data
+- `TrainingArguments`: config for how training runs
+
+Why repeating the same data improves performance (epochs):
+
+- each epoch adjusts weights slightly toward correct outputs
+- changes are small, so multiple passes help convergence
+- even with same data, updated weights improve next pass
 
 ---
 
-## ۸. AutoGen: تیم‌های چند ایجنت
+## Day 10 - Multi-Model Agent Teams with AutoGen
 
-**AutoGen** فریم‌ورک اوپن‌سورس برای ساخت و مدیریت سیستم‌های **multi-agent** با LLM است: چند ایجنت که با هم حرف می‌زنند، همکاری می‌کنند و وظایف پیچیده را انجام می‌دهند.
+AutoGen orchestrates multiple agents that collaborate.
 
-**Chat Manager:** خودش یک ایجنت است که گفتگو را هماهنگ می‌کند؛ پیام را به یک ایجنت می‌فرستد، جواب را می‌گیرد و به ایجنت بعدی یا کاربر می‌دهد تا گفتگو تمام شود.
-
-**نمونه پرامپت‌های system_message برای ایجنت‌ها:**
-
-- **CMO (Chief Marketing Officer):**  
-  `"You are the Chief Marketing Officer. Your goal is to define high-level marketing strategy and priorities. Consider brand, channels, and budget. Be concise and actionable. When the user or another agent shares a topic, respond with strategic direction and key decisions to make."`
-
-- **Brand Marketer:**  
-  `"You are a Brand Marketer. Your goal is to turn the CMO's strategy into concrete campaign ideas and messaging. Suggest specific channels, copy angles, and next steps. Reference what the CMO said and build on it. Keep responses focused and implementable."`
-
-نصب (نمونه):
+Install:
 
 ```bash
 pip install -q pyautogen openai google-generativeai "ag2[gemini]"
 ```
 
-### تنظیم ایجنت‌ها
+Key terms:
 
-- **ConversableAgent:** با `system_message` و `llm_config` (مثلاً OpenAI یا Gemini). با `human_input_mode="NEVER"` ورودی مستقیم از کاربر نمی‌گیرد و فقط بر اساس system message و ورودی برنامه پاسخ می‌دهد.
-- **UserProxyAgent:** نقش کاربر را بازی می‌کند؛ با `human_input_mode="ALWAYS"` در هر مرحله ورودی از کاربر می‌گیرد. با **code_execution_config** می‌توان اجازهٔ اجرای کد پایتون را داد یا نداد.
-- **is_termination_msg:** تابعی که مشخص می‌کند با چه پیامی گفتگو تمام شود (مثلاً "exit" یا "quit").
-- **max_consecutive_auto_reply:** حداکثر تعداد پاسخ خودکار پشت‌سرهم بدون ورود کاربر. مثلاً ۱ یعنی بعد از یک پاسخ ایجنت، کنترل به کاربر برگردد تا دوباره چیزی بگوید.
+- `chat manager`: an agent that coordinates other agents
+- `human_input_mode`: whether an agent can ask for human input
+- `code_execution_config`: whether code execution is allowed
 
-**سؤال: max_consecutive_auto_reply چیست؟**  
-تعداد حداکثر replyهایی که همان agent می‌تواند پشت‌سرهم بفرستد بدون اینکه کاربر چیزی بگوید. با ۱، بعد از هر پاسخ ایجنت، نوبت به کاربر (یا manager) می‌رسد. با عدد بالاتر، آن ایجنت می‌تواند چند بار پشت‌سرهم پاسخ دهد (مثلاً برای حل گام‌به‌گام یک مسئله).
+`max_consecutive_auto_reply`:
 
-### GroupChat و GroupChatManager
+- limits automatic replies in a row (helps prevent runaway loops)
+
+Example (OpenAI + Gemini mix, cleaned and corrected):
 
 ```python
+import autogen
+
+openai_api_key = "YOUR_OPENAI_KEY"
+google_api_key = "YOUR_GOOGLE_KEY"
+
+config_list_openai = [{"model": "gpt-4o-mini", "api_key": openai_api_key}]
+llm_config_openai = {"config_list": config_list_openai, "temperature": 0.7, "timeout": 120}
+
+config_list_gemini = [{"model": "gemini-2.0-flash", "api_key": google_api_key, "api_type": "google"}]
+llm_config_gemini = {"config_list": config_list_gemini, "temperature": 0.6, "timeout": 120}
+
+cmo_prompt = "You are a CMO. Propose positioning and messaging."
+brand_marketer_prompt = "You are a brand marketer. Create slogans and campaign ideas."
+
+cmo_agent_gemini = autogen.ConversableAgent(
+    name="Chief_Marketing_Officer_Gemini",
+    system_message=cmo_prompt,
+    llm_config=llm_config_gemini,
+    human_input_mode="NEVER",
+)
+
+brand_marketer_agent_openai = autogen.ConversableAgent(
+    name="Brand_Marketer_OpenAI",
+    system_message=brand_marketer_prompt,
+    llm_config=llm_config_openai,
+    human_input_mode="NEVER",
+)
+
+user_proxy_agent = autogen.UserProxyAgent(
+    name="Human_User_Proxy",
+    human_input_mode="ALWAYS",
+    max_consecutive_auto_reply=1,
+    is_termination_msg=lambda x: x.get("content", "").rstrip().lower() in {"exit", "quit"},
+    code_execution_config=False,
+)
+
+for a in (cmo_agent_gemini, brand_marketer_agent_openai, user_proxy_agent):
+    a.reset()
+
 from autogen import GroupChat, GroupChatManager
 
 groupchat = GroupChat(
-    agents=[user_proxy_agent, cmo_agent_gemini, brand_marketer_agent],
-    messages=[],   # پیام‌های اولیه (اختیاری)
-    max_round=20,  # یک دور = هر ایجنت حداکثر یک بار صحبت کند
+    agents=[user_proxy_agent, cmo_agent_gemini, brand_marketer_agent_openai],
+    messages=[],
+    max_round=20,
 )
-group_manager = GroupChatManager(groupchat=groupchat, llm_config=llm_config)
-result = group_manager.initiate_chat(recipient=one_of_agents, message="موضوع بحث...")
+
+manager = GroupChatManager(groupchat=groupchat, llm_config=llm_config_openai)
+manager.initiate_chat(recipient=brand_marketer_agent_openai, message="Launch a new coffee brand for students.")
 ```
 
 ---
 
-## ۹. LangGraph: ورک‌فلوهای ایجنتیک
+## Day 11 - Agentic Workflows in LangGraph
 
-### ایجنت AI
+LangGraph models agent workflows as nodes + edges with shared state.
 
-سیستم‌های خودمختاری که می‌توانند با ابزارهای مختلف و در بازهٔ زمانی طولانی‌تر به‌صورت مستقل کار کنند. هستهٔ آن‌ها معمولاً یک **Augmented LLM** (LLM به‌همراه ابزار و حافظه) است.
-
-### LangGraph
-
-فریم‌ورکی برای مدل‌سازی رفتار ایجنت به‌صورت یک **گراف**: نودها = مراحل (فراخوانی LLM، استفاده از ابزار، تصمیم‌گیری) و یال‌ها = جریان بین مراحل. امکان ساخت ایجنت چندمرحله‌ای، stateful و قابل کنترل را می‌دهد.
-
-**State:** ظرفی است که داده را بین نودها جابه‌جا می‌کند. هر نود state را می‌گیرد و state به‌روزشده برمی‌گرداند.
-
-نمونه نصب:
+Install:
 
 ```bash
-pip install langchain langgraph langchain_openai tavily-python amadeus langchain_community graphviz
+pip install langchain langgraph langchain-openai tavily-python amadeus langchain-community graphviz
 ```
 
-### مثال ساده: دو نود (خلاصه + ترجمه)
+Key ideas (from notes, expanded):
 
-با **StateGraph** دو نود تعریف می‌کنید: یکی خلاصه‌سازی، یکی ترجمه. state شامل `input_text`، `summary` و `translated_summary` است. لبه از نود اول به دوم و entry point نود اول است. بعد `compile()` و `invoke(initial_state)`.
+- AI agents can act autonomously over time using tools
+- `state` is a container passed between nodes
+- nodes are steps (LLM call, tool call, transform)
+- conditional edges route execution based on model output
 
-**نمونه پرامپت‌ها برای نودها:**
+Example 1: simple 2-node workflow (summarize -> translate)
 
-- **خلاصه‌سازی (summarize_step):**  
-  `f"Summarize the following text in 3–5 clear bullet points. Preserve the main ideas and key facts. Do not add information that is not in the text.\n\nText:\n{state['input_text']}"`
+```python
+from typing import TypedDict
 
-- **ترجمه (translate_step):**  
-  `f"Translate the following summary to Persian (or English, as needed). Keep the same structure (e.g. bullet points). Be accurate and natural.\n\nSummary:\n{state['summary']}"`
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph
 
-برای ایجنت دارای ابزار (مثلاً جستجو)، یک system message مناسب مثال:  
-`"You are a helpful assistant with access to a search tool. Use the tool when you need up-to-date or factual information (e.g. current events, definitions). For simple math or general knowledge you already know, answer directly. Always cite what you found when you use search."`
 
-### ایجنت با ابزار و conditional edges
+class AgentState(TypedDict):
+    input_text: str
+    summary: str
+    translated_summary: str
 
-- مدل با **bind_tools** به ابزارها (مثلاً Tavily Search) وصل می‌شود.
-- تابع **should_continue** بررسی می‌کند آیا آخرین پیام از نوع AIMessage و دارای **tool_calls** است؛ اگر بله به نود "action" (مثلاً ToolNode) می‌رود، وگرنه به END.
-- بعد از اجرای ابزار، خروجی به‌صورت ToolMessage برمی‌گردد و دوباره به نود agent می‌رود.
 
-مدل خودش تصمیم می‌گیرد چه زمانی از ابزار استفاده کند (مثلاً برای ۲+۲ لازم نمی‌بیند جستجو کند).
+def summarize_step(state: AgentState) -> AgentState:
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    prompt = [
+        ("system", "Summarize the text in exactly three sentences."),
+        ("user", state["input_text"]),
+    ]
+    result = llm.invoke(prompt)
+    return {**state, "summary": result.content}
 
-### ابزار سفارشی
 
-با دکوراتور **`@tool`** از LangChain تابع پایتون را به ابزار تبدیل می‌کنید. مثال جستجوی پرواز با **Amadeus**: پارامترها (مبدا، مقصد، تاریخ، کلاس و ...) را می‌گیرد و با `amadeus_client.shopping.flight_offers_search.get(...)` نتیجه را برمی‌گرداند. این ابزار را مثل Tavily به گراف اضافه می‌کنید و در پرامپت ایجنت توضیح می‌دهید چه زمانی از آن استفاده کند. جستجوی هتل هم در Amadeus وجود دارد ولی محدودتر است.
+def translate_step(state: AgentState) -> AgentState:
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    prompt = [
+        ("system", "Translate the summary into Persian. Keep technical terms consistent."),
+        ("user", state["summary"]),
+    ]
+    result = llm.invoke(prompt)
+    return {**state, "translated_summary": result.content}
+
+
+workflow = StateGraph(AgentState)
+workflow.add_node("summarize", summarize_step)
+workflow.add_node("translate", translate_step)
+workflow.add_edge("summarize", "translate")
+workflow.set_entry_point("summarize")
+
+app = workflow.compile()
+
+initial_state: AgentState = {"input_text": "Lorem ipsum...", "summary": "", "translated_summary": ""}
+final_state = app.invoke(initial_state)
+print(final_state["translated_summary"])
+```
+
+Example 2: one tool + conditional edges (agent decides to use tool or stop)
+
+```python
+import operator
+from typing import Annotated, Literal, Sequence, TypedDict
+
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, StateGraph
+from langgraph.prebuilt import ToolNode
+
+
+class ToolState(TypedDict):
+    messages: Annotated[Sequence[BaseMessage], operator.add]
+
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
+search_tool = TavilySearchResults(max_results=3)
+
+
+def call_model_with_tools(state: ToolState) -> ToolState:
+    model_with_tools = llm.bind_tools([search_tool])
+    response = model_with_tools.invoke(state["messages"])
+    return {"messages": [response]}
+
+
+def should_continue(state: ToolState) -> Literal["action", "__end__"]:
+    last = state["messages"][-1]
+    if isinstance(last, AIMessage) and getattr(last, "tool_calls", None):
+        return "action"
+    return END
+
+
+graph = StateGraph(ToolState)
+graph.add_node("agent", call_model_with_tools)
+graph.add_node("action", ToolNode([search_tool]))
+graph.set_entry_point("agent")
+graph.add_conditional_edges("agent", should_continue, {"action": "action", END: END})
+graph.add_edge("action", "agent")
+
+app = graph.compile()
+final = app.invoke({"messages": [HumanMessage(content="What is 2+2?")]})
+print(final["messages"][-1].content)
+```
+
+Notes:
+
+- The model decides whether to use a tool.
+- For simple tasks (like `2+2`) it may not call search.
+
+Create custom tools:
+
+- define a function and decorate it with `@tool` from `langchain.tools`
+
+Flight search using Amadeus & ToolNode (cleaned and corrected from notes):
+
+```python
+from amadeus import Client, ResponseError
+from langchain.tools import tool
+
+amadeus_client = Client(
+    client_id="AMADEUS_API_KEY",
+    client_secret="AMADEUS_API_SECRET",
+    hostname="test",
+)
+
+
+@tool
+def search_flights_tool(
+    origin_code: str,
+    destination_code: str,
+    departure_date: str,
+    return_date: str | None = None,
+    adults: int = 1,
+    travel_class: str = "ECONOMY",
+    currency: str = "USD",
+    max_offers: int = 5,
+) -> str:
+    """Search flights via Amadeus and return a compact text summary."""
+
+    flight_search_params = {
+        "originLocationCode": origin_code,
+        "destinationLocationCode": destination_code,
+        "departureDate": departure_date,
+        "adults": adults,
+        "travelClass": travel_class,
+        "currencyCode": currency,
+        "max": max_offers,
+    }
+    if return_date:
+        flight_search_params["returnDate"] = return_date
+
+    try:
+        response = amadeus_client.shopping.flight_offers_search.get(**flight_search_params)
+        if not response.data:
+            return "No flights found."
+
+        results = []
+        for offer in response.data[:max_offers]:
+            price = offer.get("price", {}).get("total")
+            itineraries = offer.get("itineraries", [])
+            seg0 = (itineraries[0].get("segments") or [{}])[0] if itineraries else {}
+            carrier = seg0.get("carrierCode")
+            results.append(f"{carrier or '??'} - total {price or '??'} {currency}")
+
+        return "\n".join(results)
+
+    except ResponseError as e:
+        return f"Amadeus error: {e}"
+```
 
 ---
 
-## ۱۰. CrewAI و یادگیری ماشین
+## Day 12 - CrewAI + Predictive Analytics (Regression)
 
-قبل از CrewAI، مبحث **Predictive Analytics با Machine Learning** (رگرسیون برای پیش‌بینی عددی) مرور شده است.
+The notes first review classic ML regression, then apply agent orchestration.
 
-### رگرسیون و کتابخانه‌ها
+Key ML imports:
 
-- **pandas** برای بارگذاری و بررسی داده، **sklearn** برای تقسیم داده، imputation، مدل و متریک.
-- **SimpleImputer(strategy="median")** برای پر کردن مقادیر خالی با میانه.
-- **train_test_split** برای جدا کردن train و test.
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-### EDA (Exploratory Data Analysis)
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+```
 
-۱. **تحلیل متغیر هدف:** توزیع (مثلاً histogram با seaborn)، skew.  
-۲. **تحلیل ویژگی‌های عددی:** histogram، boxplot.  
-۳. **تحلیل ویژگی‌های دسته‌ای:** countplot با ترتیب فراوانی.  
-۴. **رابطه با هدف:** scatter برای عددی–هدف، boxplot برای دسته‌ای–هدف.
+Pandas basics:
 
-### One-Hot Encoding
+- `df.head()`, `df.tail()`, `df.info()`, `df.describe()`
+- `df.describe(include=["object"])` for non-numerical summary
+- `df.isnull().sum()`
+- `df[col].unique()` and `df[col].nunique()`
 
-تبدیل متغیر دسته‌ای به چند ستون دودویی (۰/۱) برای هر دسته. هرگز به‌صورت یک ستون عددی (۱، ۲، ۳ برای قرمز، سبز، آبی) استفاده نکنید؛ مدل آن اعداد را دارای ترتیب و وزن تفسیر می‌کند.
+Median imputation:
 
-مثال: `pd.get_dummies(..., columns=categorical_cols, drop_first=True)` تا از multicolinearity جلوگیری شود.
+```python
+median_imputer = SimpleImputer(strategy="median")
+df[cols_with_missing] = median_imputer.fit_transform(df[cols_with_missing])
+```
 
-### پیش‌پردازش و مدل
+EDA steps (from notes, with cleaned code):
 
-- جدا کردن X و y، حذف ستون‌های اضافه، تقسیم train/test.
-- **LinearRegression**، **RandomForestRegressor**، **XGBRegressor** با fit و predict.
-- متریک‌ها: **MAE**، **MSE**، **RMSE**، **R²**.  
-- **Feature importance** در Random Forest: `rf_model.feature_importances_` و مرتب‌سازی.
+1) Target variable analysis
 
-یک typo در یادداشت اصلی: `features_importances_` باید **`feature_importances_`** باشد؛ و در `sns.scatterplot` و `sns.boxplot` باید ویرگول بین آرگومان‌ها باشد (مثلاً `x="Units Sold", data=df`).
+```python
+plt.figure(figsize=(10, 5))
+sns.histplot(df["Units Sold"], kde=True, bins=30)
+plt.title("Units Sold Distribution")
+plt.xlabel("Units Sold")
+plt.ylabel("Frequency")
+plt.show()
 
-### CrewAI
+print(df["Units Sold"].skew())
+```
 
-- **Agent:** نقش، هدف، backstory، LLM و اختیاراً tools.
-- **Task:** توضیح کار، خروجی مورد انتظار، ایجنت مسئول و اختیاراً ابزار.
-- **Crew:** مجموعه ایجنت‌ها و تسک‌ها با **Process.sequential** (اجرای به‌ترتیب تا تکمیل هر تسک).
-- **kickoff()** اجرای crew و **output_log_file** برای ذخیرهٔ لاگ.
+2) Numerical feature analysis
 
-پرامپت‌ها (role، goal، backstory، description و expected_output) در CrewAI خیلی مهم هستند و کیفیت خروجی را تعیین می‌کنند.
+```python
+for col in numerical_features:
+    plt.figure(figsize=(10, 4))
+    sns.histplot(df[col], kde=True, bins=25)
+    plt.title(col)
+    plt.show()
 
-**نمونه پرامپت‌ها برای ایجنت‌ها و تسک‌های CrewAI (مثلاً تیم تحلیل رگرسیون):**
+    plt.figure(figsize=(10, 2))
+    sns.boxplot(x=df[col])
+    plt.title(col)
+    plt.show()
+```
 
-- **Planner Agent:**  
-  `role="Data Science Planner"`, `goal="Define the regression problem, select target variable and key features, and set success criteria"`, `backstory="You are an experienced data scientist who breaks down problems into clear steps."`
+3) Categorical feature analysis
 
-- **Analyst/Preprocessor Agent:**  
-  `role="Data Analyst"`, `goal="Load and clean the data, perform EDA, handle missing values and encoding, and prepare train/test split"`, `backstory="You are meticulous about data quality and documentation."`
+```python
+for col in categorical_features:
+    plt.figure(figsize=(12, 5))
+    sns.countplot(y=df[col], order=df[col].value_counts().index, palette="viridis")
+    plt.title(col)
+    plt.xlabel("Count")
+    plt.ylabel(col)
+    plt.show()
+```
 
-- **Modeler/Evaluator Agent:**  
-  `role="ML Engineer"`, `goal="Train and compare regression models (e.g. Linear, Random Forest, XGBoost), report MAE/RMSE/R², and recommend the best model"`, `backstory="You focus on reproducible experiments and clear metrics."`
+4) Relationship analysis (numerical vs target, categorical vs target)
 
-- **Task (Planning):**  
-  `description="Given the dataset description and path, define the regression task: target variable, features to use, and evaluation metrics."`, `expected_output="A short written plan with target, features, and metrics."`
+```python
+for col in numerical_features:
+    plt.figure(figsize=(8, 5))
+    sns.scatterplot(x=df[col], y=df["Units Sold"], alpha=0.5)
+    plt.title(f"{col} vs Units Sold")
+    plt.show()
 
-- **Task (Modeling):**  
-  `description="Using the preprocessed data, train at least two regression models and compare them. Report MAE, RMSE, R² and feature importance if applicable."`, `expected_output="A summary of model performance and a clear recommendation."`
+for col in categorical_features:
+    plt.figure(figsize=(14, 6))
+    order = df.groupby(col)["Units Sold"].median().sort_values(ascending=False).index
+    sns.boxplot(y=col, x="Units Sold", data=df, order=order, palette="Spectral")
+    plt.title(f"{col} vs Units Sold")
+    plt.show()
+```
+
+One-hot encoding note (from notes):
+
+- Do not assign arbitrary integers to nominal categories; one-hot avoids fake ordering.
+
+Preprocessing + split:
+
+```python
+df_processed = df.copy()
+df_processed = pd.get_dummies(df_processed, columns=categorical_cols, drop_first=True)
+
+y = df_processed["Units Sold"]
+X = df_processed.drop(columns=columns_to_drop)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, shuffle=True, random_state=42
+)
+```
+
+Models (from notes, cleaned):
+
+```python
+lin = LinearRegression()
+lin.fit(X_train, y_train)
+y_pred_lin = lin.predict(X_test)
+
+mae_lin = mean_absolute_error(y_test, y_pred_lin)
+mse_lin = mean_squared_error(y_test, y_pred_lin)
+rmse_lin = np.sqrt(mse_lin)
+r2_lin = r2_score(y_test, y_pred_lin)
+
+rf = RandomForestRegressor(random_state=42)
+rf.fit(X_train, y_train)
+y_pred_rf = rf.predict(X_test)
+
+import xgboost as xgb
+xgb_model = xgb.XGBRegressor(random_state=42)
+xgb_model.fit(X_train, y_train)
+y_pred_xgb = xgb_model.predict(X_test)
+```
+
+Feature importance analysis (corrected attribute name):
+
+```python
+importances = rf.feature_importances_
+feature_names = X_train.columns
+sorted_importances = (
+    pd.Series(importances, index=feature_names)
+    .sort_values(ascending=False)
+)
+print(sorted_importances.head(20))
+```
+
+CrewAI install:
+
+```bash
+pip install crewai openai pandas langchain_openai
+```
+
+CrewAI imports:
+
+```python
+from crewai import Agent, Task, Crew, Process
+from langchain_openai import ChatOpenAI
+```
+
+CrewAI example (structure from notes; APIs vary by version):
+
+```python
+from crewai import Agent, Task, Crew, Process
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini", api_key="YOUR_OPENAI_KEY")
+
+planner_agent = Agent(role="Planner", goal="Plan the regression project", backstory="Senior DS", llm=llm, allow_delegation=False, verbose=True)
+analyst_agent = Agent(role="Analyst", goal="Perform EDA and preprocessing", backstory="Data analyst", llm=llm, allow_delegation=False, verbose=True)
+modeler_agent = Agent(role="Modeler", goal="Train and evaluate models", backstory="ML engineer", llm=llm, allow_delegation=False, verbose=True)
+
+planning_task = Task(description="Plan approach and metrics", expected_output="A step-by-step plan", agent=planner_agent)
+data_analysis_task = Task(description="Clean data and run EDA", expected_output="EDA summary and cleaned dataset", agent=analyst_agent)
+modeling_task = Task(description="Train models and evaluate", expected_output="Metrics and recommendations", agent=modeler_agent)
+
+regression_crew = Crew(
+    agents=[planner_agent, analyst_agent, modeler_agent],
+    tasks=[planning_task, data_analysis_task, modeling_task],
+    process=Process.sequential,
+    verbose=1,
+)
+
+crew_result = regression_crew.kickoff()
+print(crew_result)
+```
 
 ---
 
-## ۱۱. MCP و OpenAI Agents SDK
+## Day 13 - MCP + OpenAI Agents SDK
 
-### MCP (Model Context Protocol)
+MCP (Model Context Protocol) is an open standard for connecting models to tools/APIs/data in a structured and secure way.
 
-پروتکلی اوپن است که به مدل‌های هوش مصنوعی اجازه می‌دهد به‌صورت امن با ابزارها، APIها و داده‌ها ارتباط برقرار کنند؛ شبیه یک درگاه استاندارد (مثل USB-C) برای اپلیکیشن‌های AI.
-
-نصب (نمونه):
+Install (from notes):
 
 ```bash
 pip install openai-agents gradio openai requests httpx pillow "gradio[mcp]"
 ```
 
-### سرور MCP با Gradio
+Important fixes vs the raw notes:
 
-یک اپ Gradio با تب‌ها (مثلاً «توضیح مفهوم» و «خلاصهٔ متن») ساخته می‌شود. توابعی مثل `explain_concept` و `summary_text` با **stream=True** از OpenAI پاسخ می‌گیرند و با **yield** تکه‌تکه به UI برمی‌گردانند. در **`launch(..., mcp_server=True)`** همان اپ به‌صورت سرور MCP در دسترس قرار می‌گیرد.
+- use `yield` (not `yeild`)
+- Gradio keyword is `label` (not `lable`)
+- in the summarizer, pass `text` (not `question`)
 
-**نمونه پرامپت‌های system برای توابع سرور MCP:**
+MCP server (cleaned and corrected from notes):
 
-- **explain_concept (توضیح مفهوم):**  
-  `f"You are a patient tutor. Explain the concept or answer the question at exactly this level: {level_desc}. Use the same language as the user (e.g. Persian or English). Do not use jargon above this level. Give one clear, coherent explanation. Use a short example if it helps."`
+```python
+from typing import Generator
 
-- **summary_text (خلاصهٔ متن):**  
-  `f"You are a summarization assistant. Summarize the following text in a clear and concise way. The summary should be about {int(compression_ratio * 100)}% of the original length. Preserve the main ideas and key facts. Use the same language as the input text. Do not add information that is not in the text."`
+import gradio as gr
+from openai import OpenAI
 
-در پیام کاربر برای خلاصه باید **متن** (مثلاً `text`) فرستاده شود نه `question`. در بلوک `if __name__ == "__main__"` باید **`demo.launch(...)`** فراخوانی شود (نه `build_demo.launch(...)`). برای استریم از **`yield`** استفاده کنید (نه `yeild`).
+MODEL_NAME = "gpt-4o-mini"
+client = OpenAI(api_key="YOUR_OPENAI_KEY")
 
-### کلاینت MCP
+EXPLANATION_LEVELS = {
+    1: "Like I'm 5 years old",
+    2: "Like I'm 10 years old",
+    3: "Like a high school student",
+    4: "Like a college student",
+    5: "Like an expert in the field",
+}
 
-با **MCPServerSse** به آدرس سرور (مثلاً `http://localhost:7860/gradio_api/mcp/sse`) وصل می‌شوید. با جایگزینی `/sse` با `/schema` می‌توان schema ابزارها را با GET گرفت (`fetch_schema`). این schema را می‌توان برای فهم ابزارهای در دسترس استفاده کرد.
 
-در کد نمونه، **`retrieval schema_data`** یک اشتباه نگارشی است و باید **`return schema_data`** باشد.
+def explain_concept(question: str, level: int) -> Generator[str, None, None]:
+    if not question.strip():
+        yield "Error: question cannot be blank."
+        return
 
-### OpenAI Agents SDK با MCP
+    level_desc = EXPLANATION_LEVELS.get(level, "Clearly and concisely")
+    system_prompt = f"You are a helpful tutor. Explain {level_desc}."
 
-- **Agent** با `name`، `instruction`، `model` و `mcp_servers=[mcp_tool]`.
-- **Runner.run** برای اجرای مکالمه؛ ورودی به‌صورت لیست پیام‌ها (مثلاً `[{"role": "user", "content": ...}]`).
-- برای مکالمهٔ چندگانه، **result.to_input_list()** را با پیام جدید کاربر جمع می‌کنید و دوباره به **Runner.run** می‌دهید.
-- **result.final_output** خروجی نهایی؛ در **to_input_list()** می‌توانید tool callها و arguments را برای لاگ یا دیباگ ببینید.
+    stream = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question},
+        ],
+        stream=True,
+        temperature=0.7,
+    )
+
+    partial = ""
+    for chunk in stream:
+        delta = getattr(chunk.choices[0].delta, "content", None)
+        if delta:
+            partial += delta
+            yield partial
+
+
+def summarize_text(text: str, compression_ratio: float = 0.3) -> Generator[str, None, None]:
+    if not text.strip():
+        yield "Error: text cannot be blank."
+        return
+
+    ratio = max(0.1, min(float(compression_ratio), 0.8))
+    system_prompt = f"Summarize the user's text to about {int(ratio * 100)}% of its length. Keep key details."
+
+    stream = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text},
+        ],
+        stream=True,
+        temperature=0.5,
+    )
+
+    partial = ""
+    for chunk in stream:
+        delta = getattr(chunk.choices[0].delta, "content", None)
+        if delta:
+            partial += delta
+            yield partial
+
+
+def build_demo() -> gr.Blocks:
+    with gr.Blocks() as demo:
+        gr.Markdown("# AI Tutor (MCP)")
+
+        with gr.Tab("Explain Concept"):
+            q = gr.Textbox(label="Concept / Question")
+            lvl = gr.Slider(1, 5, value=3, step=1, label="Explanation Level")
+            out1 = gr.Markdown()
+            gr.Button("Explain").click(explain_concept, inputs=[q, lvl], outputs=out1)
+
+        with gr.Tab("Summarize Text"):
+            txt = gr.Textbox(lines=8, label="Long Text")
+            ratio = gr.Slider(0.1, 0.8, value=0.3, step=0.05, label="Compression Ratio")
+            out2 = gr.Markdown()
+            gr.Button("Summarize").click(summarize_text, inputs=[txt, ratio], outputs=out2)
+
+    return demo
+
+
+if __name__ == "__main__":
+    build_demo().launch(server_name="0.0.0.0", mcp_server=True)
+```
+
+MCP client schema fetch (cleaned from notes):
+
+```python
+import json
+import httpx
+
+MCP_BASE = "http://localhost:7860/gradio_api/mcp/sse"
+
+
+def fetch_schema(server_url: str) -> dict:
+    schema_url = server_url.replace("/sse", "/schema")
+    with httpx.Client() as client:
+        resp = client.get(schema_url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+
+
+schema = fetch_schema(MCP_BASE)
+print(json.dumps(schema, indent=2))
+```
+
+Create an agent using OpenAI Agents SDK with MCP tools (outline from notes):
+
+```python
+import asyncio
+
+from agents import Agent, Runner
+from agents.mcp import MCPServerSse
+
+MCP_BASE = "http://localhost:7860/gradio_api/mcp/sse"
+
+mcp_tool = MCPServerSse({
+    "name": "AI Tutor",
+    "url": MCP_BASE,
+    "timeout": 30,
+    "client_session_timeout_seconds": 60,
+})
+
+
+async def main():
+    agent = Agent(
+        name="TutorAgent",
+        instructions="Use the MCP tools when needed. Be concise.",
+        model="gpt-4o-mini",
+        mcp_servers=[mcp_tool],
+    )
+
+    await mcp_tool.connect()
+
+    result = None
+    while True:
+        user_input = input("User: ")
+        if user_input.lower() in {"exit", "quit"}:
+            break
+
+        if result is not None:
+            new_input = result.to_input_list() + [{"role": "user", "content": user_input}]
+        else:
+            new_input = [{"role": "user", "content": user_input}]
+
+        result = await Runner.run(starting_agent=agent, input=new_input)
+        print(result.final_output)
+
+        for msg in result.to_input_list():
+            if "arguments" in msg:
+                print(msg.get("name"), msg.get("arguments"))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ---
