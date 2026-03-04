@@ -1,0 +1,107 @@
+fundamental factores for classifying LLM{
+    - LLM Architectrue Types {
+        1- Autoregressive Models {
+            - like open gpt families
+            - Predict the next word in a sequence
+            - Best for text generation and completion
+        }
+        2- Autoencoders Models {
+            - focus on understanding and transforming text
+            - Like BERT
+            - effective for calssification and sentiment analysis.
+        }
+        3- Seq2Seq Models {
+            - convert one sequence to another
+            - like T5
+            - ideal for translation and summarization
+        }
+    }
+    - Availibility Type {
+        - Open source LLMs
+        - Proprietary LLMs
+    }
+    - Domain Specialization {
+        - Models are fine-tuned for specific fields
+        - They grasp industry-specific language and nuances
+        - ideal for applications needing high accuracy in specialized areas
+    }
+}
+Q- what is calssification and sentiment?
+
+Models Characteristics {
+    1- Central Model Repository -> like HF
+    2- Model Size -> number of parameters
+    3- Training data -> good for Domain Specialization
+    4- Architectrue
+    5- Inference speed -> Time taking to generate responses
+    6- Context window -> length of text the model can consider at once
+    7- fine-tuning ability
+    8- conherence and consistency -> generate logical and consistent responses accross different contexts and prompts
+    9- Factual accuracy -> reliability of provided information
+    10- Ethical safeguards -> measures to prevent harmful content
+    11- computation requirements -> hardware needed for the deployment in terms of CPU, GPU and memory
+    12- Multilingual capabilities -> ability to work with multiple languages
+}
+Model size {
+    - Small -> under 1B
+    - Medium ->  1-10 B
+    - Large -> 10-100 B
+    - Small -> Over 100B
+}
+
+Selecting the right LLM {
+    1- computational requirements {
+        - Check the model card for CPU/GPU needs and RAM usage
+        - Ensure the model fits your hardware and performance goals
+    }
+    2- Specialization {
+        - General purpose vs. task-specific models
+        - Choose based on whether a pre-trained/specialized model is needed
+    }
+    3- language capabilities
+    ---------------------------------------------------
+    - Notice to Licensing and usage requirements
+    - Check Community support and updates
+}
+Model families {
+    - Openai
+    - gemini
+    - claude
+    - ollama
+}
+
+Go to HF leaderboard {
+    1- Average Score
+    2- IFEval {
+        - measures the accuracy of actual information
+        - Crucial for reliable data applications like news summarization
+    }
+    3- BBH {
+        - assesses performance on challenging tasks
+        - tests complex reasoning nuanced understanding
+    }
+    4- Math
+    5- GPQA -> General QA
+    6- MUSR {
+        - checks the ability to handle tasks requiring multiple steps
+        - essential for complex decision-making and problem-solving
+    }
+    7- MMLU-Pro {
+        - assesses performance accross various professional tasks
+        - covers topics from law to medicine, ideal for specialized
+    }
+}
+deployment options {
+    1- local {
+        - full control on model
+        - Ensure data privacy and ideal for sensitive data
+        - allows for customization and fine-tuning
+        - require significant computational resources and experties
+    }
+    2- api
+}
+
+pre-trained vs. fine-tuning {
+    pre-trained -> ready to use and quick and efficient
+    fine-tuning -> Customized performance and ideal for specific applications
+}
